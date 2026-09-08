@@ -1,0 +1,7 @@
+# Temporary Codex working files
+work/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
