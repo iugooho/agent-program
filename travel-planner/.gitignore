@@ -1,0 +1,15 @@
+# 后端
+backend/target/
+backend/*.log
+
+# 前端
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# 通用
+.idea/
+*.iml
+.vscode/
+.DS_Store
+*.log

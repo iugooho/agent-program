@@ -1,7 +1,34 @@
-# Temporary Codex working files
-work/
-
 # OS noise
 .DS_Store
 Thumbs.db
 
+# Java / Maven
+target/
+*.class
+*.jar
+*.war
+!.mvn/wrapper/maven-wrapper.jar
+
+# 前端
+node_modules/
+dist/
+.vite/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.classpath
+.project
+.settings/
+
+# 本地配置与密钥
+.env
+*.env.local
+
+# 日志与临时文件
+*.log
+tmp/
+work/

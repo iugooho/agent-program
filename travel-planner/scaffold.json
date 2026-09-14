@@ -1,0 +1,13 @@
+{
+  "generator": "scaffold-cli",
+  "generatorVersion": "1.0.0-dev",
+  "generatedAt": "2026-09-14T20:26:54+08:00",
+  "projectName": "travel-planner",
+  "type": "fullstack",
+  "groupId": "com.travelagent",
+  "artifactId": "travel-planner",
+  "packageName": "com.travelagent.travelplanner",
+  "javaVersion": "21",
+  "javaDependencies": ["org.springframework:spring-core", "org.springframework:spring-context", "org.junit.jupiter:junit-jupiter", "ch.qos.logback:logback-classic", "org.slf4j:slf4j-api", "com.fasterxml.jackson.core:jackson-databind"],
+  "frontendDependencies": ["vue", "vue-router", "pinia", "axios"]
+}
