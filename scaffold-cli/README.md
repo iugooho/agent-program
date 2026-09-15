@@ -137,6 +137,10 @@ fullstack 额外生成 backend/、frontend/、根 README.md、统一 .editorconf
 
 加一种项目类型：在 ProjectType 增加枚举值 + templates/<类型>/ 目录，并在 ScaffoldEngine#mounts 里登记挂载位置。
 
+改完之后的验证顺序：`mvn -B clean test`（生成器自测）→ `mvn -B clean package`（重新打包并刷新 target/templates）→ 用 `init` 生成一个样例项目，跑一遍后端 `mvn test` 与前端 `npm run lint && npm run test`。注意 `clean` 不能省：`target/templates` 是打包时拷贝的副本，不重新打包生成器可能还在用旧模板。
+
+生成出来的项目要怎么继续加业务模块（后端分包、Controller 位置、迁移脚本编号、前端页面位置），见 templates/fullstack/README.md.tpl 里的「开发指南」小节。
+
 ## 开发者命令
 
 ```bash

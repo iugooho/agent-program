@@ -107,6 +107,49 @@ travel-planner/                   生成出来的全栈骨架
 python generate_travel_doc.py
 ```
 
-## 六、变更说明
+## 六、后续开发指南
 
-仓库里原来的手搭多模块旅游工程（travel-* 十个模块、根 pom.xml、start-local.ps1/.cmd、docker-compose.yml、.env.example、.run/ 等）已按需求整体移除，旧文件备份在 `%TEMP%\travel-scaffold-backup-20260914-202204`，需要时可以从该目录整体还原。
+仓库里有两块东西，改哪块、往哪放完全不一样：
+
+| 目录 | 定位 | 改动方式 |
+| --- | --- | --- |
+| `scaffold-cli/` | 脚手架本体：Java 代码 + `templates/` 模板 | 加依赖改 catalog，加功能改模板 + `ScaffoldEngine#mounts` |
+| `travel-planner/` | 生成出来的业务骨架 | 当成产物：改模板后重新生成，不要在这里长期手写业务代码 |
+
+### 6.1 新增一个可选依赖（脚手架侧）
+
+1. 在 `scaffold-cli/src/main/java/com/example/scaffold/core/DependencyCatalog.java` 的 static 块 `register(new Dependency(...))` 加一行；前端依赖加在 `FrontendDependencyCatalog.java`。
+2. 依赖之间有约束（日志实现互斥、需要配套模块、需要默认驱动）就在 `normalize()` 里补规则，并用 `warnings` 回写提示。
+3. 这个依赖还需要附带代码时，新建 `scaffold-cli/templates/<模板名>/`，在 `ScaffoldEngine#mounts` 里按依赖条件挂载，必要时声明 `excludedPaths`。
+4. 在 `DependencyCatalogTest` / `ScaffoldEngineTest` 里补断言，然后 `mvn -B clean test`。
+
+### 6.2 新增一种项目类型（脚手架侧）
+
+`ProjectType` 加枚举值 → 新建 `templates/<类型>/` → 在 `ScaffoldEngine#mounts` 里登记目标子目录与挂载条件 → 补测试。
+
+### 6.3 新增业务模块（骨架侧）
+
+目录约定写在生成出来的项目 README 里：后端模块分包与四层结构、Controller/DTO 放哪、迁移脚本怎么编号、前端页面与接口封装放哪，见
+[travel-planner/README.md](travel-planner/README.md) 的「开发指南：新增一个模块放哪里」，以及
+[travel-planner/backend/README.md](travel-planner/backend/README.md)、[travel-planner/frontend/README.md](travel-planner/frontend/README.md)。
+
+### 6.4 模板改动的两条铁律
+
+1. 改完 `scaffold-cli/templates/` 必须 `mvn -B clean package`：`clean` 会清掉 `target/templates`，否则生成器可能还在用旧模板。
+2. 业务骨架不要手改（会被下次生成覆盖）：改模板 → 重新 `.\scaffold.ps1 init travel-planner ... --force` → 再跑一遍校验。
+
+### 6.5 提交前自检
+
+```powershell
+cd scaffold-cli; mvn -B clean test                              # 生成器自测：24 个用例
+mvn -B -f ..\travel-planner\backend\pom.xml -Pquality verify    # 后端：测试 + Checkstyle
+npm --prefix ..\travel-planner\frontend run lint                # 前端：ESLint
+npm --prefix ..\travel-planner\frontend run test                # 前端：Vitest
+npm --prefix ..\travel-planner\frontend run build               # 前端：类型检查 + 生产构建
+```
+
+## 七、变更说明
+
+仓库里原来的手搭多模块旅游工程（travel-* 十个模块、根 pom.xml、start-local.ps1/.cmd、docker-compose.yml、.env.example 等）已按需求整体移除，旧文件备份在 `%TEMP%\travel-scaffold-backup-20260914-202204`，需要时可以从该目录整体还原。
+
+`.run/` 保留下来并指向新骨架：`backend: spring-boot:run`（默认 8080）、`backend: mvn test`、`backend: quality (checkstyle)`、`frontend: npm run dev`（默认 5173），用 IDEA 打开仓库根目录即可直接点运行。

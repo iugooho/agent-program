@@ -49,3 +49,16 @@ Windows 下也可以直接双击 `scripts\dev.cmd`。
 - 接口地址走环境变量 `VITE_API_BASE_URL`：开发留空走 Vite 代理，生产填正式域名。
 - 提交前执行 `npm run lint` 与 `npm run test`，规则集中在 `eslint.config.js`。
 - 只通过 `@/` 别名引用 `src` 下的模块，避免相对路径层层回退。
+
+## 开发指南：新增一个页面 / 模块
+
+| 步骤 | 放哪里 | 写什么 |
+| --- | --- | --- |
+| 1 | `src/api/<模块>.ts` | 接口封装：用 `src/api/http.ts` 里的实例，不在页面里直接调 axios、不手拼 URL |
+| 2 | `src/views/<模块>View.vue` | 页面组件 |
+| 3 | `src/router/index.ts` | 注册路由，页面用懒加载 `() => import('@/views/<模块>View.vue')` |
+| 4 | `src/components/` | 可复用组件；图表直接复用现成的 `EChartsPanel.vue` |
+| 5 | `src/stores/` | 跨页面共享状态时新建 Pinia store（骨架未预置，按需创建） |
+| 6 | `src/__tests__/<模块>.spec.ts` | Vitest 用例，`npm run test` 直接跑 |
+
+实时推送（生成进度、消息通知）复用 `src/realtime/stompClient.ts`，订阅地址与后端 `WebSocketConfig` 保持一致。

@@ -46,3 +46,25 @@ mvn -Pquality verify    # 代码规范检查（Checkstyle）
 - 接口一律返回统一响应结构 `ApiResponse`（code / message / data），参数校验、异常处理、日志脱敏在接口层完成。
 - 数据库表结构变更一律走迁移脚本，不要手工改库。
 - 生成信息记录在项目根目录的 `scaffold.json` 里，便于追溯初始结构。
+
+## 开发指南：新增一个模块
+
+按业务能力分包，一个模块一个包，包内再分四层（以 `itinerary` 为例）：
+
+```
+src/main/java/{{packagePath}}/itinerary/
+├── api/                ItineraryController + 请求/响应 DTO（返回 ApiResponse，入参加 @Valid）
+├── application/        ItineraryService：用例编排与事务边界
+├── domain/             Itinerary、DayPlan 实体 + ItineraryRepository 接口（不写 SQL、不加框架注解）
+└── infrastructure/     ItineraryRepositoryImpl、MyBatis-Plus Mapper、外部 API 客户端
+```
+
+新增步骤：
+
+1. 先定 `domain` 的实体和仓储接口，再写 `application` 的用例，最后才写 `api` 与 `infrastructure`，保证依赖方向单向。
+2. 建表 / 改表都写 `src/main/resources/db/migration/V<编号>__<描述>.sql`，编号递增，**已执行过的脚本不要改**，也不要手工改库。
+3. Controller 统一返回 `ApiResponse`，异常交给全局异常处理，不要在方法里手拼响应结构。
+4. 测试放 `src/test/java/{{packagePath}}/<模块>/`，和被测类同包；接口测试用 `@WebMvcTest` + MockMvc（不绑端口，CI 里可跑）。
+5. 配置项加到 `application.yml`，环境相关值用 `${ENV_VAR:默认值}` 形式。
+
+跨模块共用的东西放 `{{packagePath}}/common/`，模块之间不要直接引用对方的 `infrastructure`。
