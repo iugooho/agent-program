@@ -6,7 +6,9 @@ import { RouterLink, RouterView } from 'vue-router'
   <header class="app-header">
     <strong>{{projectName}}</strong>
     <nav>
-      <RouterLink to="/">首页</RouterLink>
+      <RouterLink to="/">
+        首页
+      </RouterLink>{{dashboardNavLink}}
     </nav>
   </header>
 

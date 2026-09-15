@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 前端依赖目录：runtime 依赖可选，构建工具链固定带上，
- * 保证生成出来的前端项目 npm install 后就能 dev / build。
+ * 前端依赖目录：runtime 依赖可选，构建与测试工具链固定带上，
+ * 保证生成出来的前端项目 npm install 后就能 dev / build / test。
  */
 public final class FrontendDependencyCatalog {
 
@@ -18,7 +18,9 @@ public final class FrontendDependencyCatalog {
         runtime(new FrontendDependency("vue", "vue", "^3.5.13", false, "Vue 3 运行时"));
         runtime(new FrontendDependency("vue-router", "vue-router", "^4.5.0", false, "Vue 官方路由"));
         runtime(new FrontendDependency("pinia", "pinia", "^2.3.0", false, "Vue 官方状态管理"));
-        runtime(new FrontendDependency("axios", "axios", "^1.7.9", false, "HTTP 客户端"));
+        runtime(new FrontendDependency("axios", "axios", "^1.7.9", false, "HTTP 客户端（统一走 src/api）"));
+        runtime(new FrontendDependency("echarts", "echarts", "^5.6.0", false, "ECharts：统计图表与数据大屏"));
+        runtime(new FrontendDependency("stomp", "@stomp/stompjs", "^7.1.0", false, "WebSocket(STOMP) 客户端"));
 
         toolchain(new FrontendDependency("vite", "vite", "^6.0.7", true, "构建与开发服务器"));
         toolchain(new FrontendDependency("plugin-vue", "@vitejs/plugin-vue", "^5.2.1", true, "Vite 的 Vue 插件"));
@@ -29,6 +31,10 @@ public final class FrontendDependencyCatalog {
         toolchain(new FrontendDependency("eslint-plugin-vue", "eslint-plugin-vue", "^9.32.0", true, "Vue 官方 ESLint 规则"));
         toolchain(new FrontendDependency("typescript-eslint", "typescript-eslint", "^8.18.0", true, "TS ESLint 规则"));
         toolchain(new FrontendDependency("prettier", "prettier", "^3.4.2", true, "代码格式化"));
+        toolchain(new FrontendDependency("vitest", "vitest", "^3.0.5", true, "Vitest 单元测试"));
+        toolchain(new FrontendDependency("vitest-coverage", "@vitest/coverage-v8", "^3.0.5", true, "Vitest 覆盖率（V8）"));
+        toolchain(new FrontendDependency("test-utils", "@vue/test-utils", "^2.4.6", true, "Vue 组件测试工具"));
+        toolchain(new FrontendDependency("jsdom", "jsdom", "^26.0.0", true, "组件测试所需的 DOM 环境"));
     }
 
     private FrontendDependencyCatalog() {
@@ -47,7 +53,7 @@ public final class FrontendDependencyCatalog {
     }
 
     public static List<String> defaults() {
-        return List.of("vue", "vue-router");
+        return List.of("vue", "vue-router", "pinia", "axios");
     }
 
     public static List<FrontendDependency> resolve(List<String> ids) {
@@ -66,6 +72,11 @@ public final class FrontendDependencyCatalog {
             }
         }
         return result;
+    }
+
+    /** 是否选了某个前端依赖：决定是否挂载对应的模板目录（api / echarts / stomp）。 */
+    public static boolean contains(List<FrontendDependency> dependencies, String id) {
+        return dependencies.stream().anyMatch(d -> d.id().equals(id));
     }
 
     public static List<FrontendDependency> toolchain() {

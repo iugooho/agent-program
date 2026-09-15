@@ -32,3 +32,7 @@ dist/
 *.log
 tmp/
 work/
+
+# Python（生成 Word 方案的脚本）
+__pycache__/
+*.pyc

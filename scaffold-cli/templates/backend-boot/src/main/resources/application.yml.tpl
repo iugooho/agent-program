@@ -1,0 +1,24 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: {{backendArtifactId}}
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+  config:
+    # 数据源按驱动拆成独立文件：本地 H2、生产 PostgreSQL，选了哪个就生成哪个
+    import:
+      - optional:classpath:application-local.yml
+      - optional:classpath:application-prod.yml
+
+app:
+  cors:
+    # 前端独立部署时把正式域名加进来，多个用逗号分隔
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

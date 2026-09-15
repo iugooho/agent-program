@@ -18,11 +18,12 @@
     <maven.compiler.parameters>true</maven.compiler.parameters>
 {{dependencyProperties}}  </properties>
 
-  <dependencies>
+{{dependencyManagement}}  <dependencies>
 {{dependencies}}  </dependencies>
 
   <build>
     <plugins>
+{{springBootPlugin}}
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>

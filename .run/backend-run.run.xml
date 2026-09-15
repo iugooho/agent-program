@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="backend: run App" type="MavenRunConfiguration" factoryName="Maven">
+  <configuration default="false" name="backend: spring-boot:run" type="MavenRunConfiguration" factoryName="Maven">
     <MavenSettings>
       <option name="myGeneralSettings" />
       <option name="myRunnerSettings" />
@@ -11,8 +11,7 @@
           </option>
           <option name="goals">
             <list>
-              <option value="compile" />
-              <option value="exec:java" />
+              <option value="spring-boot:run" />
             </list>
           </option>
           <option name="multimoduleDir" />

@@ -19,7 +19,9 @@ import java.util.stream.Stream;
  * 脚手架生成引擎：把 templates/ 下的模板渲染成目标项目。
  *
  * <p>约定：{@code *.tpl} 会被渲染并去掉后缀，其它文件原样拷贝；
- * 文件与目录名里的 {@code {{key}}} 同样会被替换。</p>
+ * 文件与目录名里的 {@code {{key}}} 同样会被替换。最终项目 = 基础模板
+ * （common / backend / frontend）加上按依赖选择的功能模板
+ * （backend-boot、backend-mybatis、backend-flyway、frontend-api 等）。</p>
  */
 public final class ScaffoldEngine {
 
@@ -39,10 +41,7 @@ public final class ScaffoldEngine {
 
         List<String> warnings = new ArrayList<>();
         List<Dependency> requestedDeps = DependencyCatalog.resolve(request.javaDeps());
-        List<Dependency> javaDeps = DependencyCatalog.ensureLoggingApi(requestedDeps);
-        if (javaDeps.size() > requestedDeps.size()) {
-            warnings.add("未选择日志依赖，已自动加入 slf4j-api，保证模板代码可编译");
-        }
+        List<Dependency> javaDeps = DependencyCatalog.normalize(requestedDeps, warnings);
         List<FrontendDependency> frontendDeps = FrontendDependencyCatalog.resolve(request.frontendDeps());
 
         Map<String, String> values = buildValues(request, javaDeps, frontendDeps);
@@ -50,10 +49,10 @@ public final class ScaffoldEngine {
         List<Path> planned = new ArrayList<>();
         Set<String> unknown = new LinkedHashSet<>();
 
-        for (Mount mount : mounts(request.type())) {
+        for (Mount mount : mounts(request, javaDeps, frontendDeps)) {
             Path source = templates.templateDir(mount.templateDir());
             Path target = mount.targetSubdir().isEmpty() ? projectDir : projectDir.resolve(mount.targetSubdir());
-            renderTree(source, target, projectDir, values, request.dryRun(), planned, unknown);
+            renderTree(source, target, projectDir, values, request.dryRun(), planned, unknown, mount.excludedPaths());
         }
 
         return new GeneratedProject(projectDir, planned, unknown, warnings, request.dryRun());
@@ -95,27 +94,87 @@ public final class ScaffoldEngine {
         }
     }
 
-    private record Mount(String templateDir, String targetSubdir) {
+    /**
+     * 一次模板挂载。
+     *
+     * @param templateDir   模板目录名
+     * @param targetSubdir  目标子目录，全栈类型下是 backend / frontend
+     * @param excludedPaths 需要跳过的模板文件（相对路径，用 / 分隔）
+     */
+    private record Mount(String templateDir, String targetSubdir, Set<String> excludedPaths) {
     }
 
-    private List<Mount> mounts(ProjectType type) {
-        return switch (type) {
-            case BACKEND -> List.of(new Mount("common", ""), new Mount("backend", ""));
-            case FRONTEND -> List.of(new Mount("common", ""), new Mount("frontend", ""));
-            case FULLSTACK -> List.of(
-                    new Mount("common", ""),
-                    new Mount("backend", "backend"),
-                    new Mount("frontend", "frontend"),
-                    new Mount("fullstack", ""));
-        };
+    private List<Mount> mounts(ScaffoldRequest request, List<Dependency> javaDeps,
+                               List<FrontendDependency> frontendDeps) {
+        ProjectType type = request.type();
+        String backendTarget = type == ProjectType.FULLSTACK ? "backend" : "";
+        String frontendTarget = type == ProjectType.FULLSTACK ? "frontend" : "";
+
+        Set<String> excluded = new LinkedHashSet<>();
+        if (DependencyCatalog.contains(javaDeps, "log4j2")) {
+            excluded.add("src/main/resources/logback.xml");
+        }
+
+        List<Mount> mounts = new ArrayList<>();
+        mounts.add(new Mount("common", "", excluded));
+
+        if (type != ProjectType.FRONTEND) {
+            mounts.add(new Mount("backend", backendTarget, excluded));
+            if (DependencyCatalog.isWebApp(javaDeps)) {
+                mounts.add(new Mount("backend-boot", backendTarget, excluded));
+            }
+            if (DependencyCatalog.contains(javaDeps, "mybatis-plus")) {
+                mounts.add(new Mount("backend-mybatis", backendTarget, excluded));
+            }
+            if (DependencyCatalog.contains(javaDeps, "h2")) {
+                mounts.add(new Mount("backend-datasource-h2", backendTarget, excluded));
+            }
+            if (DependencyCatalog.contains(javaDeps, "postgresql")) {
+                mounts.add(new Mount("backend-datasource-postgres", backendTarget, excluded));
+            }
+            if (DependencyCatalog.contains(javaDeps, "flyway")) {
+                mounts.add(new Mount("backend-flyway", backendTarget, excluded));
+            }
+            if (DependencyCatalog.contains(javaDeps, "spring-boot-security")) {
+                mounts.add(new Mount("backend-security", backendTarget, excluded));
+            }
+            if (DependencyCatalog.contains(javaDeps, "websocket")) {
+                mounts.add(new Mount("backend-websocket", backendTarget, excluded));
+            }
+            if (DependencyCatalog.contains(javaDeps, "log4j2")) {
+                mounts.add(new Mount("backend-log4j2", backendTarget, excluded));
+            }
+        }
+
+        if (type != ProjectType.BACKEND) {
+            mounts.add(new Mount("frontend", frontendTarget, excluded));
+            if (FrontendDependencyCatalog.contains(frontendDeps, "axios")) {
+                mounts.add(new Mount("frontend-api", frontendTarget, excluded));
+            }
+            if (FrontendDependencyCatalog.contains(frontendDeps, "echarts")) {
+                mounts.add(new Mount("frontend-echarts", frontendTarget, excluded));
+            }
+            if (FrontendDependencyCatalog.contains(frontendDeps, "stomp")) {
+                mounts.add(new Mount("frontend-stomp", frontendTarget, excluded));
+            }
+        }
+
+        if (type == ProjectType.FULLSTACK) {
+            mounts.add(new Mount("fullstack", "", excluded));
+        }
+
+        return mounts.stream().filter(mount -> templates.hasTemplateDir(mount.templateDir())).toList();
     }
 
     private void renderTree(Path source, Path target, Path projectDir, Map<String, String> values,
-                            boolean dryRun, List<Path> planned, Set<String> unknown) {
+                            boolean dryRun, List<Path> planned, Set<String> unknown, Set<String> excludedPaths) {
         try (Stream<Path> stream = Files.walk(source).sorted(Comparator.comparing(Path::toString))) {
             List<Path> files = stream.filter(Files::isRegularFile).toList();
             for (Path file : files) {
                 Path relative = source.relativize(file);
+                if (excludedPaths.contains(relative.toString().replace('\\', '/'))) {
+                    continue;
+                }
                 Path renderedRelative = TemplateRenderer.renderPath(relative, values);
                 Path destination = target.resolve(renderedRelative);
                 String content = Files.readString(file, StandardCharsets.UTF_8);
@@ -144,6 +203,11 @@ public final class ScaffoldEngine {
                 ? derivePackageName(request)
                 : request.packageName();
 
+        boolean bootApp = DependencyCatalog.isSpringBootApp(javaDeps);
+        boolean webApp = DependencyCatalog.isWebApp(javaDeps);
+        boolean echarts = FrontendDependencyCatalog.contains(frontendDeps, "echarts");
+        boolean postgres = DependencyCatalog.contains(javaDeps, "postgresql");
+
         values.put("projectName", request.projectName());
         values.put("description", request.description() == null ? "" : request.description());
         values.put("type", request.type().id());
@@ -158,15 +222,39 @@ public final class ScaffoldEngine {
         values.put("surefireVersion", "3.5.6");
         values.put("backendDir", "backend");
         values.put("frontendDir", "frontend");
+        values.put("springBootVersion", DependencyCatalog.SPRING_BOOT_VERSION);
+        values.put("backendRunCommand", bootApp ? "mvn spring-boot:run" : "mvn compile exec:java");
+        values.put("healthEndpoint", webApp ? "GET /api/v1/health" : "未选择 spring-boot-web，暂未生成接口");
+        values.put("mybatisDbType", postgres ? "POSTGRE_SQL" : "H2");
         values.put("dependencyProperties", DependencyCatalog.renderProperties(javaDeps));
         values.put("dependencies", DependencyCatalog.renderDependencies(javaDeps));
+        values.put("dependencyManagement", DependencyCatalog.renderDependencyManagement(javaDeps));
+        values.put("springBootPlugin", DependencyCatalog.renderSpringBootPlugin(javaDeps));
+        values.put("appImports", bootApp
+                ? "import org.springframework.boot.SpringApplication;\n"
+                        + "import org.springframework.boot.autoconfigure.SpringBootApplication;\n\n"
+                : "");
+        values.put("appAnnotations", bootApp ? "@SpringBootApplication\n" : "");
+        values.put("appMainBody", bootApp
+                ? "SpringApplication.run(App.class, args);\n        log.info(greeting());"
+                : "log.info(greeting());\n        System.out.println(greeting());");
         values.put("javaDependencyIds", String.join(", ", javaDeps.stream().map(Dependency::artifactId).toList()));
-        values.put("javaDependenciesJson", jsonArray(javaDeps.stream().map(d -> d.groupId() + ":" + d.artifactId()).toList()));
+        values.put("javaDependenciesJson",
+                jsonArray(javaDeps.stream().map(d -> d.groupId() + ":" + d.artifactId()).toList()));
         values.put("frontendDependencies", FrontendDependencyCatalog.renderRuntime(frontendDeps));
-        values.put("frontendDevDependencies", FrontendDependencyCatalog.renderToolchain(FrontendDependencyCatalog.toolchain()));
+        values.put("frontendDevDependencies",
+                FrontendDependencyCatalog.renderToolchain(FrontendDependencyCatalog.toolchain()));
         values.put("frontendDependencyIds", String.join(", ",
                 frontendDeps.stream().map(FrontendDependency::packageName).toList()));
-        values.put("frontendDependenciesJson", jsonArray(frontendDeps.stream().map(FrontendDependency::packageName).toList()));
+        values.put("frontendDependenciesJson",
+                jsonArray(frontendDeps.stream().map(FrontendDependency::packageName).toList()));
+        values.put("dashboardRoute", echarts
+                ? ",\n  {\n    path: '/dashboard',\n    name: 'dashboard',\n"
+                        + "    component: () => import('@/views/DashboardView.vue')\n  }\n"
+                : "");
+        values.put("dashboardNavLink", echarts
+                ? "\n      <RouterLink to=\"/dashboard\">\n        数据大屏\n      </RouterLink>"
+                : "");
         values.put("generatorVersion", generatorVersion());
         values.put("generatedAt", OffsetDateTime.now().format(TIMESTAMP));
         return values;

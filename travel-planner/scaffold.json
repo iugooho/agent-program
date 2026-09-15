@@ -1,13 +1,13 @@
 {
   "generator": "scaffold-cli",
   "generatorVersion": "1.0.0-dev",
-  "generatedAt": "2026-09-14T20:26:54+08:00",
+  "generatedAt": "2026-09-15T16:47:29+08:00",
   "projectName": "travel-planner",
   "type": "fullstack",
   "groupId": "com.travelagent",
   "artifactId": "travel-planner",
   "packageName": "com.travelagent.travelplanner",
   "javaVersion": "21",
-  "javaDependencies": ["org.springframework:spring-core", "org.springframework:spring-context", "org.junit.jupiter:junit-jupiter", "ch.qos.logback:logback-classic", "org.slf4j:slf4j-api", "com.fasterxml.jackson.core:jackson-databind"],
-  "frontendDependencies": ["vue", "vue-router", "pinia", "axios"]
+  "javaDependencies": ["org.springframework.boot:spring-boot-starter-web", "org.springframework.boot:spring-boot-starter-security", "org.springframework.boot:spring-boot-starter-validation", "org.springframework.boot:spring-boot-starter-actuator", "com.baomidou:mybatis-plus-spring-boot3-starter", "org.flywaydb:flyway-core", "org.postgresql:postgresql", "com.h2database:h2", "org.springdoc:springdoc-openapi-starter-webmvc-ui", "org.springframework.boot:spring-boot-starter-websocket", "org.springframework.boot:spring-boot-starter-test", "ch.qos.logback:logback-classic", "org.flywaydb:flyway-database-postgresql", "com.baomidou:mybatis-plus-jsqlparser"],
+  "frontendDependencies": ["vue", "vue-router", "pinia", "axios", "echarts", "@stomp/stompjs"]
 }

@@ -76,6 +76,16 @@ public final class TemplateResolver {
         return List.copyOf(searched);
     }
 
+    /**
+     * 可选模板目录是否存在：条件化挂载（例如只选到 Web 依赖才生成 REST 示例）时使用。
+     *
+     * @param name 模板目录名，例如 backend-boot
+     * @return 目录存在返回 true
+     */
+    public boolean hasTemplateDir(String name) {
+        return Files.isDirectory(root.resolve(name));
+    }
+
     public Path templateDir(String name) {
         Path dir = root.resolve(name);
         if (!Files.isDirectory(dir)) {

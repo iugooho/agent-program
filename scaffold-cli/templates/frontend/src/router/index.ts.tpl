@@ -7,8 +7,7 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     name: 'home',
     component: HomeView
-  }
-]
+  }{{dashboardRoute}}]
 
 const router = createRouter({
   history: createWebHistory(),
