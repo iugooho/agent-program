@@ -1,11 +1,5 @@
 import { http } from '@/api/http'
-
-/** 后端统一响应结构，与 Java 侧的 ApiResponse 一一对应。 */
-export interface ApiResponse<T> {
-  code: number
-  message: string
-  data: T
-}
+import type { ApiResponse } from '@/api/types'
 
 export interface HealthInfo {
   service: string
