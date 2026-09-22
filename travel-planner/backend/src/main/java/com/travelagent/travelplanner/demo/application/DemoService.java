@@ -14,6 +14,6 @@ public class DemoService {
      * @return greeting text
      */
     public String hello() {
-        return "Hello, world!";
+        return "Hello";
     }
 }

@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+# 同一分支连续推送时，取消上一次未跑完的流水线
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: 后端 · 测试 + Checkstyle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: mvn -Pquality verify
+        run: mvn -B -f travel-planner/backend/pom.xml -Pquality verify
+
+  frontend:
+    name: 前端 · 契约 + ESLint + Prettier + Vitest + 构建
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: travel-planner/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: travel-planner/frontend/package-lock.json
+
+      - name: 安装依赖
+        run: npm ci
+
+      # 契约（travel-planner/docs/openapi.json）与生成类型必须一致：
+      # 后端改了接口 -> 先更新契约，再执行 npm run gen:api 刷新 schema.ts，一起提交。
+      - name: 接口类型与契约同步
+        run: |
+          npm run gen:api
+          if [ -n "$(git status --porcelain -- src/api/schema.ts)" ]; then
+            echo "::error::src/api/schema.ts 与 docs/openapi.json 不一致，请本地执行 npm run gen:api 后提交"
+            git status --short -- src/api/schema.ts
+            git diff -- src/api/schema.ts
+            exit 1
+          fi
+
+      - name: ESLint
+        run: npm run lint:ci
+
+      # Prettier 只做检查，不自动改文件：本地用 npm run format 生成改动后提交。
+      - name: Prettier 格式检查
+        run: npm run format:check
+
+      - name: Vitest
+        run: npm run test
+
+      - name: 类型检查 + 生产构建
+        run: npm run build
+
+  scaffold-cli:
+    name: 脚手架 · 测试 + Checkstyle
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scaffold-cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: mvn clean verify -Pquality
+        run: mvn -B clean verify -Pquality

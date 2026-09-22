@@ -28,7 +28,13 @@
     </module>
     <module name="LocalVariableName"/>
     <module name="ParameterName"/>
-    <module name="JavadocType"/>
+    <!-- record 组件多的时候，逼着逐个写 @param 只会产出凑数注释；类级说明讲清用途即可，
+         与下面 JavadocMethod 的 allowMissingParamTags 策略一致。
+         同一份规则也在 travel-planner/backend/config/checkstyle.xml 与 scaffold-cli/config/checkstyle.xml 里，
+         三处要一起改。 -->
+    <module name="JavadocType">
+      <property name="allowMissingParamTags" value="true"/>
+    </module>
     <module name="JavadocMethod">
       <property name="accessModifiers" value="public"/>
       <property name="allowMissingParamTags" value="true"/>

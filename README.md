@@ -109,12 +109,17 @@ python generate_travel_doc.py
 
 ## 六、后续开发指南
 
-仓库里有两块东西，改哪块、往哪放完全不一样：
+仓库里有两块东西，定位已经分开，**各改各的，互不覆盖**：
 
 | 目录 | 定位 | 改动方式 |
 | --- | --- | --- |
-| `scaffold-cli/` | 脚手架本体：Java 代码 + `templates/` 模板 | 加依赖改 catalog，加功能改模板 + `ScaffoldEngine#mounts` |
-| `travel-planner/` | 生成出来的业务骨架 | 当成产物：改模板后重新生成，不要在这里长期手写业务代码 |
+| `scaffold-cli/` | 脚手架本体：Java 代码 + `templates/` 模板 | 加依赖改 catalog，加功能改模板 + `ScaffoldEngine#mounts`；产出的是**新项目**，不回写 `travel-planner/` |
+| `travel-planner/` | 正式业务代码库（旅游规划智能体系统的落地代码） | 直接改代码、按模块加业务；**不再从模板重新生成**，脚手架侧的改动不会同步进来 |
+
+`travel-planner/` 最初由 `scaffold-cli` 生成，自 2026-09-20 起转为长期手写维护，
+按普通业务项目对待。脚手架后续的迭代只服务于新生成的项目，两边从此各自演进。
+
+下面 6.1、6.2 只涉及 `scaffold-cli/`，不会影响 `travel-planner/`；6.3 是业务侧的入口。
 
 ### 6.1 新增一个可选依赖（脚手架侧）
 
@@ -127,29 +132,73 @@ python generate_travel_doc.py
 
 `ProjectType` 加枚举值 → 新建 `templates/<类型>/` → 在 `ScaffoldEngine#mounts` 里登记目标子目录与挂载条件 → 补测试。
 
-### 6.3 新增业务模块（骨架侧）
+### 6.3 新增业务模块（业务侧）
 
-目录约定写在生成出来的项目 README 里：后端模块分包与四层结构、Controller/DTO 放哪、迁移脚本怎么编号、前端页面与接口封装放哪，见
+业务代码直接写在 `travel-planner/` 里，目录约定见该目录下的 README：后端模块分包与四层结构、Controller/DTO 放哪、迁移脚本怎么编号、前端页面与接口封装放哪，见
 [travel-planner/README.md](travel-planner/README.md) 的「开发指南：新增一个模块放哪里」，以及
 [travel-planner/backend/README.md](travel-planner/backend/README.md)、[travel-planner/frontend/README.md](travel-planner/frontend/README.md)。
 
-### 6.4 模板改动的两条铁律
+### 6.4 两条铁律
 
-1. 改完 `scaffold-cli/templates/` 必须 `mvn -B clean package`：`clean` 会清掉 `target/templates`，否则生成器可能还在用旧模板。
-2. 业务骨架不要手改（会被下次生成覆盖）：改模板 → 重新 `.\scaffold.ps1 init travel-planner ... --force` → 再跑一遍校验。
+1. **禁止对 `travel-planner/` 执行 `--force` 重新生成。**它是业务代码库。`--force` 只覆盖与模板同路径的文件、不删除其它文件，所以损失形态是骨架层（README、`pom.xml`、`application.yml`、`App.java`、`vite.config.ts` 等）被整体回退到模板初始内容，而手写的业务模块原样留着——两边对不上，编译和运行都会出问题。要试模板效果就在 `scaffold-cli/` 内用 `--dry-run` 验证，或另建目录生成新项目。
+2. 改完 `scaffold-cli/templates/` 必须 `mvn -B clean package`：`clean` 会清掉 `target/templates`，否则生成器可能还在用旧模板。
 
 ### 6.5 提交前自检
 
+改业务代码（`travel-planner/`）时必跑：
+
 ```powershell
-cd scaffold-cli; mvn -B clean test                              # 生成器自测：24 个用例
-mvn -B -f ..\travel-planner\backend\pom.xml -Pquality verify    # 后端：测试 + Checkstyle
-npm --prefix ..\travel-planner\frontend run lint                # 前端：ESLint
-npm --prefix ..\travel-planner\frontend run test                # 前端：Vitest
-npm --prefix ..\travel-planner\frontend run build               # 前端：类型检查 + 生产构建
+mvn -B -f travel-planner\backend\pom.xml -Pquality verify    # 后端：测试 + Checkstyle
+npm --prefix travel-planner\frontend run lint:ci             # 前端：ESLint（只检查）
+npm --prefix travel-planner\frontend run format:check        # 前端：Prettier（只检查）
+npm --prefix travel-planner\frontend run test                # 前端：Vitest
+npm --prefix travel-planner\frontend run build               # 前端：类型检查 + 生产构建
 ```
+
+只是改了脚手架本体（`scaffold-cli/`）时才需要：
+
+```powershell
+cd scaffold-cli; mvn -B clean verify -Pquality               # 生成器自测：24 个用例 + Checkstyle
+```
+
+上面这些命令已经配进 `.github/workflows/ci.yml`，推送到 `main` 和提 PR 时自动执行，
+三个 job 并行跑（后端 / 前端 / 脚手架）。本地自检是为了快速反馈，CI 才是合并前的硬约束。
+
+注：CI 里前端跑的是 `lint:ci`（`eslint .`）与 `format:check`（`prettier --check`），两者都只检查；
+本地的 `npm run lint`（`--fix`）与 `npm run format` 会自动改文件——故意不同，本地改、CI 验。
+
+要让它真正挡住合并，还要在 GitHub 仓库 Settings → Branches 给 `main` 加保护规则，
+勾 Require status checks 并选中上面三个 job；否则 CI 红了也照样能合。
+
+### 6.6 改接口：契约先行
+
+接口契约 `travel-planner/docs/openapi.json` 由后端 DTO 生成、前端从它生成 TypeScript 类型，
+是前后端唯一的可信源（详见 [travel-planner/docs/README.md](travel-planner/docs/README.md)）：
+
+```powershell
+mvn -B -f travel-planner\backend\pom.xml test -Dopenapi.write=true   # 1. 由后端 DTO 刷新契约
+npm --prefix travel-planner\frontend run gen:api                     # 2. 由契约刷新前端类型
+```
+
+后端代码、`docs/openapi.json`、`src/api/schema.ts` 三份改动必须进同一个提交：
+后端的 `OpenApiContractTest` 挡住「改了接口忘更新契约」，CI 前端 job 挡住「更新了契约忘生成类型」。
 
 ## 七、变更说明
 
 仓库里原来的手搭多模块旅游工程（travel-* 十个模块、根 pom.xml、start-local.ps1/.cmd、docker-compose.yml、.env.example 等）已按需求整体移除，旧文件备份在 `%TEMP%\travel-scaffold-backup-20260914-202204`，需要时可以从该目录整体还原。
+
+2026-09-20：明确 `travel-planner/` 转为长期手写维护的业务代码库，不再从 `scaffold-cli/` 模板重新生成；
+脚手架与业务各自演进，禁止对 `travel-planner/` 执行 `--force` 重新生成（详见第六节）。
+
+2026-09-22：接口契约落成单一可信源。后端 DTO 经 springdoc 输出 `/v3/api-docs`，由新增的
+`OpenApiContractTest` 固化成 `travel-planner/docs/openapi.json`；前端用零依赖脚本
+`npm run gen:api` 从契约生成 `src/api/schema.ts`，原来的手写类型文件 `src/api/types.ts` 已删除。
+CI 的前端 job 增加了契约同步校验（详见 6.6 节）。
+
+2026-09-22（规范补齐）：根目录加 `.editorconfig`；新增 `AGENTS.md` 作为规则入口，
+以及 `.github/CODEOWNERS` 与 PR 模板；错误码落成 `travel-planner/docs/error-codes.md`
+（`ErrorCode` + `BusinessException` + `api/GlobalExceptionHandler`）；
+前端把 Prettier 接进 CI（`format:check`），并把排版权收归 Prettier、关掉两条会互相打架的 vue 规则；
+`scaffold-cli` 本体也挂上 Checkstyle（`mvn -Pquality verify`），与它生成的模板用同一份规则。
 
 `.run/` 保留下来并指向新骨架：`backend: spring-boot:run`（默认 8080）、`backend: mvn test`、`backend: quality (checkstyle)`、`frontend: npm run dev`（默认 5173），用 IDEA 打开仓库根目录即可直接点运行。

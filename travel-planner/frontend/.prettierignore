@@ -1,0 +1,8 @@
+# 生成物：由 npm run gen:api 从 docs/openapi.json 产出，格式由脚本决定，
+# 不参与 prettier 检查（契约同步检查用 npm run gen:api + git status 比对）。
+src/api/schema.ts
+
+# 构建与依赖
+dist/
+coverage/
+node_modules/

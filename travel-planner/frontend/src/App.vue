@@ -6,15 +6,9 @@ import { RouterLink, RouterView } from 'vue-router'
   <header class="app-header">
     <strong>travel-planner</strong>
     <nav>
-      <RouterLink to="/">
-        首页
-      </RouterLink>
-      <RouterLink to="/dashboard">
-        数据大屏
-      </RouterLink>
-      <RouterLink to="/demo">
-        Demo
-      </RouterLink>
+      <RouterLink to="/"> 首页 </RouterLink>
+      <RouterLink to="/dashboard"> 数据大屏 </RouterLink>
+      <RouterLink to="/demo"> Demo </RouterLink>
     </nav>
   </header>
 

@@ -1,5 +1,7 @@
 package com.travelagent.travelplanner.api;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * 统一响应结构：所有 REST 接口都返回 code + message + data。
  *
@@ -8,7 +10,10 @@ package com.travelagent.travelplanner.api;
  * @param message 提示文案
  * @param data 业务数据
  */
-public record ApiResponse<T>(int code, String message, T data) {
+public record ApiResponse<T>(
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int code,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String message,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) T data) {
 
     /** 成功业务码。 */
     public static final int CODE_SUCCESS = 0;

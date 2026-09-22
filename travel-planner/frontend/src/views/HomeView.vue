@@ -14,11 +14,7 @@ const hints: string[] = [
     <h1>travel-planner</h1>
     <p>这是脚手架生成的前端骨架，把这里替换成你的业务页面即可。</p>
     <ul>
-      <li
-        v-for="hint in hints"
-        :key="hint"
-        v-text="hint"
-      />
+      <li v-for="hint in hints" :key="hint" v-text="hint" />
     </ul>
   </section>
 </template>

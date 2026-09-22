@@ -26,43 +26,22 @@ onMounted(loadHello)
 <template>
   <section class="demo">
     <div>
-      <p class="eyebrow">
-        API DEMO
-      </p>
+      <p class="eyebrow">API DEMO</p>
       <h1>Hello, world</h1>
-      <p class="description">
-        通过前端请求后端接口并展示返回值。
-      </p>
+      <p class="description">通过前端请求后端接口并展示返回值。</p>
     </div>
 
-    <div
-      class="result"
-      aria-live="polite"
-    >
-      <p v-if="loading">
-        正在调用...
-      </p>
-      <p
-        v-else-if="error"
-        class="error"
-      >
+    <div class="result" aria-live="polite">
+      <p v-if="loading">正在调用...</p>
+      <p v-else-if="error" class="error">
         {{ error }}
       </p>
-      <p
-        v-else
-        class="message"
-      >
+      <p v-else class="message">
         {{ message }}
       </p>
     </div>
 
-    <button
-      type="button"
-      :disabled="loading"
-      @click="loadHello"
-    >
-      重新调用
-    </button>
+    <button type="button" :disabled="loading" @click="loadHello">重新调用</button>
   </section>
 </template>
 

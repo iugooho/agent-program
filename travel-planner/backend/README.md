@@ -1,7 +1,7 @@
 # travel-planner
 
-由 `scaffold-cli` 生成的 Java 后端骨架（Spring Boot 3 + Maven + JDK 21），
-目录结构、依赖版本和代码规范已在脚手架里统一定好。
+旅游规划智能体系统的 Java 后端（Spring Boot 3 + Maven + JDK 21），
+长期手写维护，不从模板重新生成。目录结构、依赖版本和代码规范以本目录为准。
 
 ## 快速开始
 
@@ -44,8 +44,27 @@ mvn -Pquality verify    # 代码规范检查（Checkstyle）
 - 编译目标 JDK 21，编译参数固定带 `-parameters -Xlint:all`。
 - `mvn -Pquality verify` 按 `config/checkstyle.xml` 检查代码，在 `verify` 阶段执行。
 - 接口一律返回统一响应结构 `ApiResponse`（code / message / data），参数校验、异常处理、日志脱敏在接口层完成。
+- 失败一律带业务错误码：抛 `BusinessException`（`common/error`）或让 `@Valid` 失败，
+  由 `api/GlobalExceptionHandler` 统一转成 `ApiResponse`，码表见 `../docs/error-codes.md`，
+  Controller 不要自己 try-catch 拼响应。
 - 数据库表结构变更一律走迁移脚本，不要手工改库。
-- 生成信息记录在项目根目录的 `scaffold.json` 里，便于追溯初始结构。
+- 初始生成信息记录在上级目录的 `scaffold.json` 里，仅作追溯；当前代码以本目录为准。
+
+## 接口契约（OpenAPI）
+
+后端是接口契约的真源：springdoc 从 DTO 与 Controller 扫描出 `/v3/api-docs`，契约测试把它固化成
+上一级目录的 `docs/openapi.json`，前端再从该文件生成 TypeScript 类型。
+
+```bash
+mvn test                          # 校验：后端实际输出与 ../docs/openapi.json 是否一致
+mvn test -Dopenapi.write=true     # 更新：把最新结构写回 ../docs/openapi.json
+```
+
+改了 Controller 或 DTO 之后必须走一次 `-Dopenapi.write=true` 并把 `../docs/openapi.json` 一起提交，
+否则 `OpenApiContractTest` 会在 CI 里失败。契约测试是 `@SpringBootTest`，不需要手动起服务。
+
+写 DTO 的注意点：用 record 声明字段类型，字段上标 `@Schema(requiredMode = REQUIRED)` 才会进契约的
+`required` 数组；漏标的话前端生成出来的字段会变成可选，等于把类型检查关掉。
 
 ## 开发指南：新增一个模块
 

@@ -44,15 +44,8 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="chart-panel">
-    <h2
-      class="chart-panel__title"
-      v-text="title"
-    />
-    <div
-      ref="container"
-      class="chart-panel__canvas"
-      :style="{ height: height ?? '320px' }"
-    />
+    <h2 class="chart-panel__title" v-text="title" />
+    <div ref="container" class="chart-panel__canvas" :style="{ height: height ?? '320px' }" />
   </section>
 </template>
 

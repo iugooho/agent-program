@@ -1,0 +1,24 @@
+# 仓库根目录的统一编辑规范。
+# travel-planner/ 及其 backend、frontend 下另有 .editorconfig（各自 root = true），
+# 以更靠近文件的配置为准；本文件管的是根目录、.github/ 与 scaffold-cli/。
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Java：4 空格、行长 140，与 travel-planner/backend/config/checkstyle.xml 对齐
+[*.java]
+indent_style = space
+indent_size = 4
+max_line_length = 140
+
+[*.{xml,yml,yaml,json,ts,vue,css,js,mjs,html,ps1,cmd}]
+indent_style = space
+indent_size = 2
+
+# markdown 行尾两个空格是有语义的（强制换行），不要自动删
+[*.md]
+trim_trailing_whitespace = false

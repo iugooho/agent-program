@@ -111,6 +111,7 @@ public final class ScaffoldCli {
                 System.out.println("  cd frontend && npm install && npm run dev   # 前端开发服务器");
                 System.out.println("  .\\scripts\\dev.ps1            # 一键起后端与前端");
             }
+            default -> throw new ScaffoldException("未处理的项目类型: " + request.type());
         }
     }
 }

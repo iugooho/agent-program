@@ -1,7 +1,11 @@
 # travel-planner
 
-由 `scaffold-cli` 生成的全栈骨架：`backend/` 是 Java 后端（Spring Boot 3.5.16），
+旅游规划智能体系统的业务代码库：`backend/` 是 Java 后端（Spring Boot 3.5.16），
 `frontend/` 是 Vue 3 前端（Vite），两端通过 `/api` 接口契约联调。
+
+本目录最初由 `scaffold-cli` 生成，自 2026-09-20 起转为**长期手写维护**：
+不再从模板重新生成，脚手架侧的改动也不会同步进来。业务代码直接写在这里，
+禁止在本目录执行 `scaffold.ps1 init --force`（详见仓库根目录 README 第六节）。
 
 ## 快速开始
 
@@ -31,6 +35,40 @@ Windows 下一键启动（后端在新窗口运行，前端在当前窗口）：
 - 后端 artifactId 为 `travel-planner-backend`，前端包名为 `travel-planner-frontend`。
 - Java 版本：21；包名：com.travelagent.travelplanner。
 
+## 接口契约（前后端唯一可信源）
+
+接口结构只保留一份来源：**后端的 DTO 与 Controller**，经 `docs/openapi.json` 传给前端。
+
+```
+backend DTO / Controller  --(springdoc /v3/api-docs)-->  docs/openapi.json  --(npm run gen:api)-->  frontend/src/api/schema.ts
+        真源                                                 契约（提交进仓库）                          生成的 TS 类型（不手改）
+```
+
+改接口的四步，缺一步 CI 就会红：
+
+```powershell
+# 1. 改后端 DTO / Controller
+# 2. 重新生成契约
+mvn -f backend/pom.xml test -Dopenapi.write=true
+# 3. 重新生成前端类型
+npm --prefix frontend run gen:api
+# 4. 把后端代码 + docs/openapi.json + frontend/src/api/schema.ts 放进同一个提交
+```
+
+两道防线：后端 `backend/src/test/java/com/travelagent/travelplanner/OpenApiContractTest.java` 保证
+后端实际输出的 OpenAPI 与 `docs/openapi.json` 一致（普通 `mvn test` 就会跑到）；
+CI 的前端 job 重新执行 `npm run gen:api` 并比对 `src/api/schema.ts`，保证契约与前端类型一致。
+细节见 [docs/README.md](docs/README.md)。
+
+前端引用类型一律 `import type { ApiResponseXxx } from '@/api/schema'`：不要手写接口类型，也不要手改 `schema.ts`。
+
+## 错误码
+
+失败响应与成功响应同构，都是 `ApiResponse`，前端按 `code` 判分支、不解析 `message`。
+完整码表与用法见 [docs/error-codes.md](docs/error-codes.md)：业务代码抛
+`com.travelagent.travelplanner.common.error.BusinessException`（不依赖任何框架类型），
+由 `api/GlobalExceptionHandler` 统一转成响应和 HTTP 状态。
+
 ## 各自的规范
 
 | 位置 | 编码 | 校验命令 |
@@ -39,7 +77,7 @@ Windows 下一键启动（后端在新窗口运行，前端在当前窗口）：
 | `frontend/` | UTF-8、2 空格、ESLint + Prettier | `npm --prefix frontend run lint` |
 | 前端测试 | Vitest + jsdom | `npm --prefix frontend run test` |
 
-生成信息（脚手架版本、选择的依赖）见根目录 `scaffold.json`。
+生成信息（脚手架版本、选择的依赖）见根目录 `scaffold.json`，仅作初始结构的追溯，当前代码以本目录为准。
 
 ## 开发指南：新增一个模块放哪里
 
@@ -80,6 +118,12 @@ Windows 下一键启动（后端在新窗口运行，前端在当前窗口）：
 
 ```powershell
 mvn -f backend/pom.xml -Pquality verify    # 后端：测试 + Checkstyle
-npm --prefix frontend run lint             # 前端：ESLint
+npm --prefix frontend run lint:ci          # 前端：ESLint（只检查）
+npm --prefix frontend run format:check     # 前端：Prettier（只检查）
 npm --prefix frontend run test             # 前端：Vitest
 ```
+
+改了接口的话，前面还要加「重新生成契约 + 重新生成前端类型」两步（见上一节）。
+
+这几条也跑在 CI 里（`.github/workflows/ci.yml`，本地路径按仓库根目录写即可），
+推送和 PR 会自动执行；本地 `npm run lint` 带 `--fix` 会自动改文件，CI 用的是只检查的 `npm run lint:ci`。

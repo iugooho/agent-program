@@ -137,16 +137,21 @@ fullstack 额外生成 backend/、frontend/、根 README.md、统一 .editorconf
 
 加一种项目类型：在 ProjectType 增加枚举值 + templates/<类型>/ 目录，并在 ScaffoldEngine#mounts 里登记挂载位置。
 
-改完之后的验证顺序：`mvn -B clean test`（生成器自测）→ `mvn -B clean package`（重新打包并刷新 target/templates）→ 用 `init` 生成一个样例项目，跑一遍后端 `mvn test` 与前端 `npm run lint && npm run test`。注意 `clean` 不能省：`target/templates` 是打包时拷贝的副本，不重新打包生成器可能还在用旧模板。
+改完之后的验证顺序：`mvn -B clean verify -Pquality`（生成器自测 + Checkstyle）→ `mvn -B clean package`（重新打包并刷新 target/templates）→ 用 `init` 生成一个样例项目，跑一遍后端 `mvn test` 与前端 `npm run lint:ci && npm run test`。注意 `clean` 不能省：`target/templates` 是打包时拷贝的副本，不重新打包生成器可能还在用旧模板。
 
 生成出来的项目要怎么继续加业务模块（后端分包、Controller 位置、迁移脚本编号、前端页面位置），见 templates/fullstack/README.md.tpl 里的「开发指南」小节。
 
 ## 开发者命令
 
 ```bash
-mvn -B clean test     # 运行生成器自身的单元测试（当前 24 个）
-mvn -B clean package  # 打包，同时把 templates/ 复制到 target/templates
+mvn -B clean test                 # 运行生成器自身的单元测试（当前 24 个）
+mvn -B clean verify -Pquality     # 上述测试 + Checkstyle（config/checkstyle.xml）
+mvn -B clean package              # 打包，同时把 templates/ 复制到 target/templates
 ```
+
+生成器自己也要守规矩：`config/checkstyle.xml` 与它生成的
+`templates/backend/config/checkstyle.xml`、业务库的 `travel-planner/backend/config/checkstyle.xml`
+是同一份规则，改一处要改三处。
 
 改动或重命名 `templates/` 下的文件后，请用 `mvn clean package`（`clean` 会清掉 `target/templates` 里的旧模板，避免新旧文件同时被生成）。
 

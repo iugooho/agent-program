@@ -1,0 +1,22 @@
+# 各目录的 reviewer。默认全部由 @iugooho 过。
+#
+# 前后端分给不同的人之后，把下面每一行换成对应的账号或 GitHub Team，例如：
+#   /travel-planner/backend/    @iugooho @someone-backend
+#   /travel-planner/frontend/   @iugooho @someone-frontend
+# 一个目录可以写多个 owner（空格分隔），最后匹配上的那行生效。
+
+*                                                   @iugooho
+
+# 接口契约：前后端都依赖它，改了必须让后端 owner 过一眼
+/travel-planner/docs/                               @iugooho
+
+# 数据库迁移：改错要上生产数据
+/travel-planner/backend/src/main/resources/db/      @iugooho
+
+# 脚手架模板：一改就影响之后生成的所有新项目
+/scaffold-cli/templates/                            @iugooho
+
+# 规范本身：改规范等于改所有人的工作方式
+/.github/                                           @iugooho
+/AGENTS.md                                          @iugooho
+/.editorconfig                                      @iugooho

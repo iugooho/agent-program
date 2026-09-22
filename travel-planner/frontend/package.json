@@ -13,7 +13,10 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "lint": "eslint . --fix",
-    "format": "prettier --write \"src/**/*.{ts,vue,css}\""
+    "lint:ci": "eslint .",
+    "gen:api": "node scripts/gen-api-types.mjs",
+    "format": "prettier --write \"src/**/*.{ts,vue,css}\" \"scripts/**/*.mjs\"",
+    "format:check": "prettier --check \"src/**/*.{ts,vue,css}\" \"scripts/**/*.mjs\""
   },
   "dependencies": {
     "vue": "^3.5.13",

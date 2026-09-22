@@ -27,6 +27,6 @@ class DemoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.message").value("ok"))
-                .andExpect(jsonPath("$.data").value("Hello, world!"));
+                .andExpect(jsonPath("$.data").value("Hello"));
     }
 }
