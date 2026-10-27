@@ -129,8 +129,8 @@ public final class ScaffoldEngine {
             if (DependencyCatalog.contains(javaDeps, "h2")) {
                 mounts.add(new Mount("backend-datasource-h2", backendTarget, excluded));
             }
-            if (DependencyCatalog.contains(javaDeps, "postgresql")) {
-                mounts.add(new Mount("backend-datasource-postgres", backendTarget, excluded));
+            if (DependencyCatalog.contains(javaDeps, "mysql")) {
+                mounts.add(new Mount("backend-datasource-mysql", backendTarget, excluded));
             }
             if (DependencyCatalog.contains(javaDeps, "flyway")) {
                 mounts.add(new Mount("backend-flyway", backendTarget, excluded));
@@ -206,7 +206,7 @@ public final class ScaffoldEngine {
         boolean bootApp = DependencyCatalog.isSpringBootApp(javaDeps);
         boolean webApp = DependencyCatalog.isWebApp(javaDeps);
         boolean echarts = FrontendDependencyCatalog.contains(frontendDeps, "echarts");
-        boolean postgres = DependencyCatalog.contains(javaDeps, "postgresql");
+        boolean mysql = DependencyCatalog.contains(javaDeps, "mysql");
 
         values.put("projectName", request.projectName());
         values.put("description", request.description() == null ? "" : request.description());
@@ -225,7 +225,7 @@ public final class ScaffoldEngine {
         values.put("springBootVersion", DependencyCatalog.SPRING_BOOT_VERSION);
         values.put("backendRunCommand", bootApp ? "mvn spring-boot:run" : "mvn compile exec:java");
         values.put("healthEndpoint", webApp ? "GET /api/v1/health" : "未选择 spring-boot-web，暂未生成接口");
-        values.put("mybatisDbType", postgres ? "POSTGRE_SQL" : "H2");
+        values.put("mybatisDbType", mysql ? "MYSQL" : "H2");
         values.put("dependencyProperties", DependencyCatalog.renderProperties(javaDeps));
         values.put("dependencies", DependencyCatalog.renderDependencies(javaDeps));
         values.put("dependencyManagement", DependencyCatalog.renderDependencyManagement(javaDeps));

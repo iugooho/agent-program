@@ -182,7 +182,7 @@ def build_document():
     run = p.add_run("版本：V1.0")
     run.font.size = Pt(11)
     p.add_run("\n编制日期：" + date.today().isoformat())
-    p.add_run("\n技术路线：前后端分离（Vue 3 SPA + Spring Boot REST API）+ Spring AI + MyBatis-Plus + Flyway + PostgreSQL + RabbitMQ + Docker")
+    p.add_run("\n技术路线：前后端分离（Vue 3 SPA + Spring Boot REST API）+ Spring AI + MyBatis-Plus + Flyway + MySQL + RabbitMQ + Docker")
 
     doc.add_page_break()
 
@@ -230,7 +230,7 @@ Nginx / CDN（静态资源托管 + /api 反向代理）
           └── 企业管理后台
                     │
                     ▼
-       PostgreSQL + PostGIS + Redis
+       MySQL 8（空间索引）+ Redis
                     │
                     ▼
 地图 / 天气 / 交通 / 酒店 / 餐饮数据源
@@ -243,7 +243,7 @@ Nginx / CDN（静态资源托管 + /api 反向代理）
         ["前后端通信", "REST + JSON、SpringDoc OpenAPI", "契约先行，统一 /api 前缀、统一响应结构与接口文档"],
         ["AI 编排", "Spring AI", "统一封装模型调用、结构化输出和工具调用"],
         ["持久层", "MyBatis-Plus", "单表 CRUD 与分页开箱可用，复杂查询写 XML"],
-        ["数据库", "PostgreSQL + PostGIS", "业务数据、地理位置和空间距离计算"],
+        ["数据库", "MySQL 8（InnoDB + 空间索引）", "业务数据、地理位置和空间距离计算"],
         ["数据库版本管理", "Flyway", "建表与数据变更全部走迁移脚本，禁止手工改库"],
         ["连接池", "HikariCP（默认），Druid 可选", "需要 SQL 监控与慢 SQL 统计时再替换为 Druid"],
         ["缓存", "Redis", "会话、热点数据、限流和任务状态"],
@@ -353,7 +353,7 @@ GET /api/v1/trips/{tripId}
         ["RabbitMQ / Kafka", "定为 RabbitMQ", "本项目消息场景是导出、通知、异步查询，RabbitMQ 的路由与延迟队列更贴合，运维成本低于 Kafka"],
         ["Spring Security / Shiro", "采纳 Spring Security", "不使用 Shiro：与 Spring Boot 自动配置、JWT、方法级注解、OAuth2 扩展的集成度更好"],
         ["SLF4J + Log4j / Log4j2", "SLF4J 门面 + Logback 默认，可换 Log4j2", "门面统一 SLF4J；默认实现 Logback，需要异步日志或更高吞吐时换 Log4j2（2.17 以上），禁止 Log4j 1.x"],
-        ["Elasticsearch 全文搜索", "暂缓，预留扩展点", "第一版用 PostgreSQL 全文检索覆盖景点与线路搜索；搜索能力按接口抽象，后续可平滑替换为 ES"],
+        ["Elasticsearch 全文搜索", "暂缓，预留扩展点", "第一版用 MySQL 全文索引（FULLTEXT + ngram 分词）覆盖景点与线路搜索；搜索能力按接口抽象，后续可平滑替换为 ES"],
         ["接口安全", "采纳并细化", "签名 + 时间戳 + nonce 防重放、幂等键、限流、入参校验、审计日志（见 3.3）"],
         ["MyBatis", "采纳 MyBatis-Plus", "单表 CRUD 与分页由 MyBatis-Plus 提供，复杂查询保留 XML；表结构变更统一走 Flyway"],
         ["Druid / HikariCP", "默认 HikariCP，Druid 可选", "只有需要 SQL 监控与慢 SQL 统计时才替换为 Druid，且监控页必须鉴权并限制来源 IP"],
@@ -424,11 +424,11 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 """)
-    doc.add_paragraph("迁移脚本使用标准 SQL 写法（不使用 BIGSERIAL、TIMESTAMPTZ 等数据库方言），保证本地 H2 与生产 PostgreSQL 都能执行同一份脚本。")
+    doc.add_paragraph("迁移脚本只用 H2（MySQL 兼容模式）与 MySQL 8 都支持的写法：自增用 AUTO_INCREMENT、时间默认值用 CURRENT_TIMESTAMP，保证本地与生产执行同一份脚本。")
 
     add_heading(doc, "3.6 搜索能力与微服务边界", 2)
     add_table(doc, ["候选技术", "第一版方案", "升级触发条件"], [
-        ["Elasticsearch", "PostgreSQL 全文检索（tsvector / pg_trgm），搜索能力封装为 SearchService 接口", "文档量到百万级、需要分词相关性排序或搜索与分析共用时替换为 ES"],
+        ["Elasticsearch", "MySQL 全文索引（FULLTEXT + ngram 分词），搜索能力封装为 SearchService 接口", "文档量到百万级、需要分词相关性排序或搜索与分析共用时替换为 ES"],
         ["Spring Cloud + Nacos", "单体应用内部按包分层，模块之间只通过接口调用", "需要多团队并行、独立扩缩容、灰度发布或集中配置管理时拆分服务"],
         ["RabbitMQ", "第一版就引入，承担导出、通知与异步查询", "吞吐或顺序性要求显著提升时再评估 Kafka，不提前替换"],
         ["MinIO / OSS", "第一版就引入，导出文件用签名 URL 下发", "需要 CDN 加速或云端存储时替换为 OSS / S3，接口保持不变"],
@@ -458,7 +458,7 @@ CREATE TABLE IF NOT EXISTS users (
         ["spring-boot-web", "Spring Boot Web + 内嵌 Tomcat", "启动类、/api/v1/health 接口、统一响应、CORS 配置、application.yml"],
         ["mybatis-plus", "MyBatis-Plus 3.5.x", "持久层依赖与配置，Mapper 扫描入口"],
         ["flyway", "Flyway 迁移工具", "db/migration 目录与首个迁移脚本"],
-        ["postgresql / h2", "数据库驱动", "application.yml 数据源配置（H2 便于本地启动与测试）"],
+        ["mysql / h2", "数据库驱动", "application.yml 数据源配置（H2 用 MODE=MySQL，便于本地启动与测试）"],
         ["springdoc", "SpringDoc OpenAPI", "Swagger UI 接口文档 /swagger-ui.html"],
         ["druid", "Druid 连接池（替换 HikariCP）", "连接池与监控端点配置"],
         ["log4j2", "Log4j2 日志实现（替换 Logback）", "log4j2-spring.xml 日志配置"],
@@ -472,7 +472,7 @@ CREATE TABLE IF NOT EXISTS users (
     add_code(doc, """
 # 按本章选型生成前后端分离骨架
 scaffold-cli init travel-planner --type fullstack --java 21 ^
-  --deps spring-boot-web,mybatis-plus,flyway,postgresql,h2,springdoc,junit,logback ^
+  --deps spring-boot-web,mybatis-plus,flyway,mysql,h2,springdoc,junit,logback ^
   --frontend-deps vue,vue-router,pinia,axios,echarts,stomp
 """)
 
@@ -727,7 +727,7 @@ Nginx / CDN
    ├── /            → 前端静态资源（dist）
    └── /api, /ws    → 后端服务（8080，可多实例负载均衡）
                           │
-                          ├── PostgreSQL（业务库 + 备份）
+                          ├── MySQL（业务库 + 备份）
                           ├── Redis（缓存、限流、会话）
                           ├── RabbitMQ（异步任务）
                           └── MinIO / OSS（导出文件）
@@ -766,11 +766,12 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
     add_code(doc, """
 # docker-compose.yml（本地开发依赖；后端与前端仍可本地启动）
 services:
-  postgres:
-    image: postgis/postgis:16-3.4
-    environment: [POSTGRES_DB=travel, POSTGRES_USER=travel, POSTGRES_PASSWORD=travel]
-    ports: ["5432:5432"]
-    volumes: ["pgdata:/var/lib/postgresql/data"]
+  mysql:
+    image: mysql:8.4
+    environment: [MYSQL_DATABASE=travel, MYSQL_USER=travel, MYSQL_PASSWORD=travel, MYSQL_ROOT_PASSWORD=root]
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    ports: ["3306:3306"]
+    volumes: ["mysqldata:/var/lib/mysql"]
   redis:
     image: redis:7-alpine
     ports: ["6379:6379"]
@@ -782,7 +783,7 @@ services:
     command: server /data --console-address ":9001"
     ports: ["9000:9000", "9001:9001"]
 volumes:
-  pgdata:
+  mysqldata:
 """)
 
     add_heading(doc, "13.3 环境与配置管理", 2)
@@ -868,7 +869,7 @@ jobs:
     ])
 
     add_heading(doc, "16. 结论与实施建议", 1)
-    doc.add_paragraph("本项目建议采用 Java 作为主开发语言，以 Spring Boot 构建稳定的业务后端，以 Spring AI 负责大模型接入和 Agent 工具调用，以 PostgreSQL、Redis 和外部旅行数据服务支撑实时规划。")
+    doc.add_paragraph("本项目建议采用 Java 作为主开发语言，以 Spring Boot 构建稳定的业务后端，以 Spring AI 负责大模型接入和 Agent 工具调用，以 MySQL、Redis 和外部旅行数据服务支撑实时规划。")
     doc.add_paragraph("系统设计应坚持以下分工：")
     add_bullets(doc, [
         "大模型负责自然语言理解、方案解释、用户沟通和推荐理由生成。",

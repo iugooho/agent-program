@@ -84,12 +84,12 @@ public final class DependencyCatalog {
         register(new Dependency("flyway", "org.flywaydb", "flyway-core",
                 null, null, "", "compile",
                 "Flyway：数据库迁移脚本"));
-        register(new Dependency("flyway-postgresql", "org.flywaydb", "flyway-database-postgresql",
+        register(new Dependency("flyway-mysql", "org.flywaydb", "flyway-mysql",
                 null, null, "", "compile",
-                "Flyway 的 PostgreSQL 支持（选 flyway + postgresql 时自动引入）"));
-        register(new Dependency("postgresql", "org.postgresql", "postgresql",
+                "Flyway 的 MySQL 支持（选 flyway + mysql 时自动引入）"));
+        register(new Dependency("mysql", "com.mysql", "mysql-connector-j",
                 null, null, "", "runtime",
-                "PostgreSQL JDBC 驱动"));
+                "MySQL JDBC 驱动（mysql-connector-j，版本由 BOM 管理）"));
         register(new Dependency("h2", "com.h2database", "h2",
                 null, null, "", "runtime",
                 "H2 内存数据库：本地启动与集成测试"));
@@ -141,7 +141,7 @@ public final class DependencyCatalog {
      *
      * <ol>
      *   <li>Log4j2 与 Logback 互斥，避免出现两个 SLF4J 绑定</li>
-     *   <li>选 Flyway + PostgreSQL 时自动补 flyway-database-postgresql</li>
+     *   <li>选 Flyway + MySQL 时自动补 flyway-mysql</li>
      *   <li>选了持久层却没选驱动时自动补 H2，保证本地能直接启动</li>
      *   <li>没有日志门面时自动补 slf4j-api，没有测试框架时自动补 junit-jupiter</li>
      * </ol>
@@ -157,16 +157,16 @@ public final class DependencyCatalog {
             result.removeIf(d -> d.id().equals("logback"));
             warnings.add("Log4j2 与 Logback 只能保留一个，已移除 logback-classic，避免出现两个 SLF4J 绑定");
         }
-        if (contains(result, "flyway") && contains(result, "postgresql") && !contains(result, "flyway-postgresql")) {
-            result.add(ALL.get("flyway-postgresql"));
+        if (contains(result, "flyway") && contains(result, "mysql") && !contains(result, "flyway-mysql")) {
+            result.add(ALL.get("flyway-mysql"));
         }
         if (contains(result, "mybatis-plus") && !contains(result, "mybatis-plus-jsqlparser")) {
             result.add(ALL.get("mybatis-plus-jsqlparser"));
         }
         boolean needsDriver = contains(result, "mybatis-plus") || contains(result, "flyway");
-        if (needsDriver && !contains(result, "h2") && !contains(result, "postgresql")) {
+        if (needsDriver && !contains(result, "h2") && !contains(result, "mysql")) {
             result.add(ALL.get("h2"));
-            warnings.add("选了持久层但没有数据库驱动，已自动加入 H2（runtime），本地可直接启动；生产环境请换成 postgresql");
+            warnings.add("选了持久层但没有数据库驱动，已自动加入 H2（runtime），本地可直接启动；生产环境请换成 mysql");
         }
 
         List<Dependency> withLogging = ensureLoggingApi(result);

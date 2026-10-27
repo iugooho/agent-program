@@ -8,6 +8,6 @@
   "artifactId": "travel-planner",
   "packageName": "com.travelagent.travelplanner",
   "javaVersion": "21",
-  "javaDependencies": ["org.springframework.boot:spring-boot-starter-web", "org.springframework.boot:spring-boot-starter-security", "org.springframework.boot:spring-boot-starter-validation", "org.springframework.boot:spring-boot-starter-actuator", "com.baomidou:mybatis-plus-spring-boot3-starter", "org.flywaydb:flyway-core", "org.postgresql:postgresql", "com.h2database:h2", "org.springdoc:springdoc-openapi-starter-webmvc-ui", "org.springframework.boot:spring-boot-starter-websocket", "org.springframework.boot:spring-boot-starter-test", "ch.qos.logback:logback-classic", "org.flywaydb:flyway-database-postgresql", "com.baomidou:mybatis-plus-jsqlparser"],
+  "javaDependencies": ["org.springframework.boot:spring-boot-starter-web", "org.springframework.boot:spring-boot-starter-security", "org.springframework.boot:spring-boot-starter-validation", "org.springframework.boot:spring-boot-starter-actuator", "com.baomidou:mybatis-plus-spring-boot3-starter", "org.flywaydb:flyway-core", "com.mysql:mysql-connector-j", "com.h2database:h2", "org.springdoc:springdoc-openapi-starter-webmvc-ui", "org.springframework.boot:spring-boot-starter-websocket", "org.springframework.boot:spring-boot-starter-test", "ch.qos.logback:logback-classic", "org.flywaydb:flyway-mysql", "com.baomidou:mybatis-plus-jsqlparser"],
   "frontendDependencies": ["vue", "vue-router", "pinia", "axios", "echarts", "@stomp/stompjs"]
 }

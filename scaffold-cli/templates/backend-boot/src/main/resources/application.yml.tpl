@@ -7,7 +7,7 @@ spring:
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   config:
-    # 数据源按驱动拆成独立文件：本地 H2、生产 PostgreSQL，选了哪个就生成哪个
+    # 数据源按驱动拆成独立文件：本地 H2（MySQL 兼容模式）、生产 MySQL，选了哪个就生成哪个
     import:
       - optional:classpath:application-local.yml
       - optional:classpath:application-prod.yml

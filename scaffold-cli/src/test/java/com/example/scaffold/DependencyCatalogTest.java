@@ -89,8 +89,8 @@ class DependencyCatalogTest {
                 "应排除 starter 默认携带的日志实现");
 
         List<Dependency> flyway = DependencyCatalog.normalize(
-                DependencyCatalog.resolve(List.of("spring-boot-web", "flyway", "postgresql", "junit")), new ArrayList<>());
-        assertTrue(DependencyCatalog.contains(flyway, "flyway-postgresql"), "flyway + postgresql 应补数据库支持");
+                DependencyCatalog.resolve(List.of("spring-boot-web", "flyway", "mysql", "junit")), new ArrayList<>());
+        assertTrue(DependencyCatalog.contains(flyway, "flyway-mysql"), "flyway + mysql 应补数据库支持");
 
         List<Dependency> noDriver = DependencyCatalog.normalize(
                 DependencyCatalog.resolve(List.of("spring-boot-web", "mybatis-plus", "junit")), new ArrayList<>());

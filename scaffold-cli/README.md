@@ -10,7 +10,7 @@
 | `frontend` | Vue 3 + TypeScript + Vite 工程（package.json、tsconfig.json、ESLint、Prettier、Vitest、路由、代理、接口封装） | vue、vue-router、pinia、axios | 23 |
 | `fullstack` | backend/ + frontend/ + 一键启动脚本 | 上面两者 | 45 |
 
-可选依赖共 30 项（`.\scaffold.ps1 list` 可查全量）：Java 24 项 —— 基础 spring-core / spring-context / junit / logback / slf4j / jackson / lombok；官方 starter spring-boot-web / spring-boot-test / spring-boot-security / validation / actuator / redis / rabbitmq / websocket / log4j2；持久层与数据库 mybatis-plus / mybatis-plus-jsqlparser / flyway / flyway-postgresql / postgresql / h2 / druid；接口文档 springdoc。前端 6 项 —— vue / vue-router / pinia / axios / echarts / stomp。
+可选依赖共 30 项（`.\scaffold.ps1 list` 可查全量）：Java 24 项 —— 基础 spring-core / spring-context / junit / logback / slf4j / jackson / lombok；官方 starter spring-boot-web / spring-boot-test / spring-boot-security / validation / actuator / redis / rabbitmq / websocket / log4j2；持久层与数据库 mybatis-plus / mybatis-plus-jsqlparser / flyway / flyway-mysql / mysql / h2 / druid；接口文档 springdoc。前端 6 项 —— vue / vue-router / pinia / axios / echarts / stomp。
 
 ## 快速开始
 
@@ -18,7 +18,7 @@
 # 首次运行会自动 mvn package
 .\scaffold.ps1 list
 .\scaffold.ps1 init my-service --type backend --group com.acme
-.\scaffold.ps1 init my-api --type backend --deps spring-boot-web,spring-boot-security,mybatis-plus,flyway,postgresql,actuator,springdoc
+.\scaffold.ps1 init my-api --type backend --deps spring-boot-web,spring-boot-security,mybatis-plus,flyway,mysql,actuator,springdoc
 .\scaffold.ps1 init my-web --type frontend --frontend-deps vue,vue-router,pinia,axios,echarts
 .\scaffold.ps1 init my-platform --type fullstack --deps spring-boot-web,mybatis-plus,h2 --frontend-deps vue,vue-router,pinia,axios
 ```
@@ -103,8 +103,8 @@ my-api/
 | 选择了 | 额外生成 |
 | --- | --- |
 | mybatis-plus | `config/MyBatisPlusConfig.java`（分页插件），并自动补 `mybatis-plus-jsqlparser` |
-| flyway | `src/main/resources/db/migration/V1__init.sql`；同时选 postgresql 时自动补 `flyway-database-postgresql` |
-| postgresql / h2 | `application-prod.yml` / `application-local.yml`；两者都没选时自动补 H2（runtime），保证本地开箱能启动 |
+| flyway | `src/main/resources/db/migration/V1__init.sql`；同时选 mysql 时自动补 `flyway-mysql` |
+| mysql / h2 | `application-prod.yml` / `application-local.yml`（H2 用 `MODE=MySQL`）；两者都没选时自动补 H2（runtime），保证本地开箱能启动 |
 | spring-boot-security | `config/SecurityConfig.java`（健康检查与接口文档放行，其余需认证） |
 | websocket | `config/WebSocketConfig.java`（STOMP，订阅 `/topic`，端点 `/ws`） |
 | log4j2 | `log4j2-spring.xml`，并移除 `logback.xml` 与 starter 自带的日志实现，避免两份 SLF4J 绑定 |

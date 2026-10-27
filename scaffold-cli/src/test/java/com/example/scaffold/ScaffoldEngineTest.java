@@ -97,21 +97,26 @@ class ScaffoldEngineTest {
     }
 
     @Test
-    @DisplayName("持久层组合：MyBatis-Plus + Flyway + PostgreSQL 自动补齐数据库支持与迁移脚本")
+    @DisplayName("持久层组合：MyBatis-Plus + Flyway + MySQL 自动补齐数据库支持与迁移脚本")
     void generatesPersistenceStack(@TempDir Path tempDir) throws IOException {
         var project = engine().generate(request(tempDir, ProjectType.BACKEND, false,
-                List.of("spring-boot-web", "mybatis-plus", "flyway", "postgresql", "junit", "logback"),
+                List.of("spring-boot-web", "mybatis-plus", "flyway", "mysql", "h2", "junit", "logback"),
                 List.of("vue", "vue-router")));
         Path root = project.root();
 
         String pom = read(root, "pom.xml");
         assertTrue(pom.contains("<artifactId>mybatis-plus-spring-boot3-starter</artifactId>"));
         assertTrue(pom.contains("<artifactId>flyway-core</artifactId>"));
-        assertTrue(pom.contains("<artifactId>flyway-database-postgresql</artifactId>"), "flyway + postgresql 应自动补数据库支持");
+        assertTrue(pom.contains("<artifactId>flyway-mysql</artifactId>"), "flyway + mysql 应自动补数据库支持");
+        assertTrue(pom.contains("<artifactId>mysql-connector-j</artifactId>"), "应包含 MySQL JDBC 驱动");
 
         assertTrue(Files.exists(root.resolve("src/main/resources/db/migration/V1__init.sql")), "应生成迁移脚本");
-        assertTrue(Files.exists(root.resolve("src/main/resources/application-prod.yml")), "应生成 PostgreSQL 数据源配置");
+        assertTrue(Files.exists(root.resolve("src/main/resources/application-prod.yml")), "应生成 MySQL 数据源配置");
+        assertTrue(read(root, "src/main/resources/application-prod.yml").contains("jdbc:mysql://"), "生产数据源应指向 MySQL");
+        assertTrue(read(root, "src/main/resources/application-local.yml").contains("MODE=MySQL"), "本地 H2 应使用 MySQL 兼容模式");
         assertTrue(Files.exists(root.resolve("src/main/java/com/acme/myapp/config/MyBatisPlusConfig.java")));
+        assertTrue(read(root, "src/main/java/com/acme/myapp/config/MyBatisPlusConfig.java").contains("DbType.MYSQL"),
+                "MyBatis-Plus 分页方言应为 MYSQL");
         assertNoPlaceholderLeft(root);
     }
 

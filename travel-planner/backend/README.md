@@ -33,7 +33,7 @@ mvn -Pquality verify    # 代码规范检查（Checkstyle）
 
 ## 依赖
 
-当前已引入：spring-boot-starter-web, spring-boot-starter-security, spring-boot-starter-validation, spring-boot-starter-actuator, mybatis-plus-spring-boot3-starter, flyway-core, postgresql, h2, springdoc-openapi-starter-webmvc-ui, spring-boot-starter-websocket, spring-boot-starter-test, logback-classic, flyway-database-postgresql, mybatis-plus-jsqlparser
+当前已引入：spring-boot-starter-web, spring-boot-starter-security, spring-boot-starter-validation, spring-boot-starter-actuator, mybatis-plus-spring-boot3-starter, flyway-core, mysql-connector-j, h2, springdoc-openapi-starter-webmvc-ui, spring-boot-starter-websocket, spring-boot-starter-test, logback-classic, flyway-mysql, mybatis-plus-jsqlparser
 
 - Spring Boot 官方依赖的版本由 `spring-boot-dependencies`（BOM 3.5.16）统一管理，dependency 里不写版本号。
 - 第三方依赖（MyBatis-Plus、SpringDoc、Druid）的版本集中写在 `<properties>` 里，不要在 dependency 中重复写。

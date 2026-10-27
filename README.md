@@ -18,8 +18,8 @@ cd scaffold-cli
 | --- | --- |
 | 生成目录结构 | `src/main/java`、`src/main/resources`、`src/test/java`、`scripts/`，前端整套 Vue 目录 |
 | 生成配置文件 | 后端 `pom.xml`；前端 `package.json`、`tsconfig.json`、`vite.config.ts`、`eslint.config.js`、`.prettierrc.json` |
-| 自动引入基础依赖 | Java 默认 spring-boot-web / spring-boot-test / logback，另有 mybatis-plus、flyway、postgresql、h2、redis、rabbitmq、websocket、spring-boot-security、validation、actuator、springdoc、druid、log4j2 等共 24 个可选项；前端默认 vue / vue-router / pinia / axios，另有 echarts、stomp（vite、typescript、eslint、prettier、vitest 自动附带） |
-| 按依赖挂载功能模板 | 选 Spring Boot 就生成启动类 + REST 示例 + 统一响应；选 MyBatis-Plus / Flyway / PostgreSQL 就带持久层配置、迁移脚本与数据源；选 WebSocket 就带 STOMP 配置；前端选 ECharts 就带图表组件与数据大屏路由 |
+| 自动引入基础依赖 | Java 默认 spring-boot-web / spring-boot-test / logback，另有 mybatis-plus、flyway、mysql、h2、redis、rabbitmq、websocket、spring-boot-security、validation、actuator、springdoc、druid、log4j2 等共 24 个可选项；前端默认 vue / vue-router / pinia / axios，另有 echarts、stomp（vite、typescript、eslint、prettier、vitest 自动附带） |
+| 按依赖挂载功能模板 | 选 Spring Boot 就生成启动类 + REST 示例 + 统一响应；选 MyBatis-Plus / Flyway / MySQL 就带持久层配置、迁移脚本与数据源（本地 H2 用 MySQL 兼容模式）；选 WebSocket 就带 STOMP 配置；前端选 ECharts 就带图表组件与数据大屏路由 |
 | 统一项目规范 | UTF-8 编码、`maven.compiler.release`、`.editorconfig`、`.gitignore`、`-Xlint:all`、Checkstyle 3.6.0、ESLint + Prettier、Vitest |
 | 内置脚本命令 | 后端 `mvn test` / `mvn spring-boot:run` / `mvn -Pquality verify`；前端 `npm run dev` / `build` / `lint` / `test` / `format` |
 | 自带能跑的测试 | 后端生成 AppTest / ApiResponseTest / HealthControllerTest（MockMvc，不绑定端口）；前端生成 Vitest + jsdom 用例，生成完 `mvn test`、`npm run test` 直接是绿的 |
@@ -33,7 +33,7 @@ cd scaffold-cli
 
 # 常用写法
 .\scaffold.ps1 init my-app --type backend --group com.acme
-.\scaffold.ps1 init my-api --type backend --deps spring-boot-web,spring-boot-security,mybatis-plus,flyway,postgresql,actuator,springdoc
+.\scaffold.ps1 init my-api --type backend --deps spring-boot-web,spring-boot-security,mybatis-plus,flyway,mysql,actuator,springdoc
 .\scaffold.ps1 init my-shop --type fullstack --deps spring-boot-web,mybatis-plus,h2 --frontend-deps vue,vue-router,pinia,axios,echarts,stomp --output ..
 .\scaffold.ps1 init demo --type frontend --frontend-deps vue,vue-router,pinia,axios --no-interactive
 
