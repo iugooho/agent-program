@@ -8,7 +8,41 @@
     "url" : "http://localhost",
     "description" : "Generated server url"
   } ],
+  "tags" : [ {
+    "name" : "旅行规划",
+    "description" : "将自然语言旅行需求转换为经过规则校验的行程"
+  } ],
   "paths" : {
+    "/api/v1/trips/plan" : {
+      "post" : {
+        "tags" : [ "旅行规划" ],
+        "summary" : "生成旅行计划",
+        "description" : "模型解析需求，工具补充实时事实，Java 校验预算和时间",
+        "operationId" : "plan",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/TripPlanRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseTripPlanResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health" : {
       "get" : {
         "tags" : [ "health-controller" ],
@@ -48,6 +82,229 @@
   },
   "components" : {
     "schemas" : {
+      "TripPlanRequest" : {
+        "type" : "object",
+        "properties" : {
+          "message" : {
+            "type" : "string",
+            "example" : "从北京去杭州玩 3 天，2 人，预算 6000，想轻松一点，不要购物",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "message" ]
+      },
+      "ApiResponseTripPlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/TripPlanResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "BudgetSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "attractions" : {
+            "type" : "number"
+          },
+          "food" : {
+            "type" : "number"
+          },
+          "accommodationAndTransport" : {
+            "type" : "number"
+          },
+          "total" : {
+            "type" : "number"
+          }
+        },
+        "required" : [ "accommodationAndTransport", "attractions", "food", "total" ]
+      },
+      "DayPlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "dayNumber" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "date" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "city" : {
+            "type" : "string"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ItineraryItemResponse"
+            }
+          },
+          "notes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "city", "date", "dayNumber", "items", "notes" ]
+      },
+      "EvidenceResponse" : {
+        "type" : "object",
+        "properties" : {
+          "source" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "fetchedAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "description", "fetchedAt", "source" ]
+      },
+      "ItineraryItemResponse" : {
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "startTime" : {
+            "type" : "string"
+          },
+          "endTime" : {
+            "type" : "string"
+          },
+          "location" : {
+            "type" : "string"
+          },
+          "estimatedCost" : {
+            "type" : "number"
+          },
+          "notes" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "endTime", "estimatedCost", "location", "notes", "startTime", "title", "type" ]
+      },
+      "ItineraryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string"
+          },
+          "totalBudget" : {
+            "type" : "number"
+          },
+          "budgetSummary" : {
+            "$ref" : "#/components/schemas/BudgetSummaryResponse"
+          },
+          "days" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DayPlanResponse"
+            }
+          },
+          "warnings" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "evidences" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EvidenceResponse"
+            }
+          }
+        },
+        "required" : [ "budgetSummary", "days", "evidences", "title", "totalBudget", "warnings" ]
+      },
+      "TripPlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "request" : {
+            "$ref" : "#/components/schemas/TripRequestResponse"
+          },
+          "itinerary" : {
+            "$ref" : "#/components/schemas/ItineraryResponse"
+          },
+          "mode" : {
+            "type" : "string",
+            "example" : "deepseek+java"
+          }
+        },
+        "required" : [ "itinerary", "mode", "request" ]
+      },
+      "TripRequestResponse" : {
+        "type" : "object",
+        "properties" : {
+          "departureCity" : {
+            "type" : "string"
+          },
+          "destinations" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "startDate" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "days" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "travelers" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "budget" : {
+            "type" : "number"
+          },
+          "travelStyles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "transportPreference" : {
+            "type" : "string"
+          },
+          "foodPreferences" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "forbiddenItems" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "accommodationPreferences" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "accommodationPreferences", "budget", "days", "departureCity", "destinations", "foodPreferences", "forbiddenItems", "startDate", "transportPreference", "travelStyles", "travelers" ]
+      },
       "ApiResponseHealthResponse" : {
         "type" : "object",
         "properties" : {

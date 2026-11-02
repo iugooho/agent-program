@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: travel-planner-backend
+  http:
+    client:
+      connect-timeout: 10s
+      read-timeout: 45s
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:local}
   config:
@@ -11,8 +15,27 @@ spring:
     import:
       - optional:classpath:application-local.yml
       - optional:classpath:application-prod.yml
+  ai:
+    # Spring AI 1.1.x 对应 Spring Boot 3.5.x，密钥只从环境变量读取。
+    model:
+      # 未配置密钥时禁用模型自动配置，智能体仍可用规则解析降级运行。
+      chat: ${SPRING_AI_MODEL_CHAT:none}
+    deepseek:
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
+      api-key: ${DEEPSEEK_API_KEY:}
+      chat:
+        model: ${DEEPSEEK_MODEL:deepseek-v4-flash}
+        temperature: 0.1
 
 app:
+  travel:
+    amap:
+      base-url: ${AMAP_BASE_URL:https://restapi.amap.com}
+      api-key: ${AMAP_API_KEY:}
+    weather:
+      # 和风天气项目专属 API Host，例如 https://xxxx.re.qweatherapi.com
+      base-url: ${QWEATHER_API_HOST:}
+      api-key: ${QWEATHER_API_KEY:}
   cors:
     # 前端独立部署时把正式域名加进来，多个用逗号分隔
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}

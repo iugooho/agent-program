@@ -9,13 +9,15 @@ import HomeView from '@/views/HomeView.vue'
 // 这里放一个占位路由，避免单测里刷 "No match found for location" 警告。
 const DashboardStub = { name: 'DashboardStub', render: () => null }
 const DemoStub = { name: 'DemoStub', render: () => null }
+const TripsStub = { name: 'TripsStub', render: () => null }
 
 const router = createRouter({
   history: createMemoryHistory(),
   routes: [
     { path: '/', component: HomeView },
     { path: '/dashboard', component: DashboardStub },
-    { path: '/demo', component: DemoStub }
+    { path: '/demo', component: DemoStub },
+    { path: '/trips', component: TripsStub }
   ]
 })
 

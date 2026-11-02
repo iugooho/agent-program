@@ -22,7 +22,7 @@ cd scaffold-cli
 | 按依赖挂载功能模板 | 选 Spring Boot 就生成启动类 + REST 示例 + 统一响应；选 MyBatis-Plus / Flyway / MySQL 就带持久层配置、迁移脚本与数据源（本地 H2 用 MySQL 兼容模式）；选 WebSocket 就带 STOMP 配置；前端选 ECharts 就带图表组件与数据大屏路由 |
 | 统一项目规范 | UTF-8 编码、`maven.compiler.release`、`.editorconfig`、`.gitignore`、`-Xlint:all`、Checkstyle 3.6.0、ESLint + Prettier、Vitest |
 | 内置脚本命令 | 后端 `mvn test` / `mvn spring-boot:run` / `mvn -Pquality verify`；前端 `npm run dev` / `build` / `lint` / `test` / `format` |
-| 自带能跑的测试 | 后端生成 AppTest / ApiResponseTest / HealthControllerTest（MockMvc，不绑定端口）；前端生成 Vitest + jsdom 用例，生成完 `mvn test`、`npm run test` 直接是绿的 |
+| 自带能跑的测试 | 后端生成 TravelPlannerApplicationTest / ApiResponseTest / HealthControllerTest（MockMvc，不绑定端口）；前端生成 Vitest + jsdom 用例，生成完 `mvn test`、`npm run test` 直接是绿的 |
 
 三种项目类型（按默认依赖实测）：`backend` 17 个文件、`frontend` 23 个文件、`fullstack` 45 个文件（挂成 `backend/` + `frontend/`）；勾选的功能越多，生成的文件越多。
 
@@ -140,7 +140,7 @@ python generate_travel_doc.py
 
 ### 6.4 两条铁律
 
-1. **禁止对 `travel-planner/` 执行 `--force` 重新生成。**它是业务代码库。`--force` 只覆盖与模板同路径的文件、不删除其它文件，所以损失形态是骨架层（README、`pom.xml`、`application.yml`、`App.java`、`vite.config.ts` 等）被整体回退到模板初始内容，而手写的业务模块原样留着——两边对不上，编译和运行都会出问题。要试模板效果就在 `scaffold-cli/` 内用 `--dry-run` 验证，或另建目录生成新项目。
+1. **禁止对 `travel-planner/` 执行 `--force` 重新生成。**它是业务代码库。`--force` 只覆盖与模板同路径的文件、不删除其它文件，所以损失形态是骨架层（README、`pom.xml`、`application.yml`、`TravelPlannerApplication.java`、`vite.config.ts` 等）被整体回退到模板初始内容，而手写的业务模块原样留着——两边对不上，编译和运行都会出问题。要试模板效果就在 `scaffold-cli/` 内用 `--dry-run` 验证，或另建目录生成新项目。
 2. 改完 `scaffold-cli/templates/` 必须 `mvn -B clean package`：`clean` 会清掉 `target/templates`，否则生成器可能还在用旧模板。
 
 ### 6.5 提交前自检

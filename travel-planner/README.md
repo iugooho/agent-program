@@ -35,6 +35,35 @@ Windows 下一键启动（后端在新窗口运行，前端在当前窗口）：
 - 后端 artifactId 为 `travel-planner-backend`，前端包名为 `travel-planner-frontend`。
 - Java 版本：21；包名：com.travelagent.travelplanner。
 
+## 旅行规划智能体
+
+第一版智能体入口：`POST /api/v1/trips/plan`。Spring AI 的 `ChatClient` 调用 DeepSeek，
+把自然语言解析为 `TripRequest`；高德补充城市与景点 POI，和风天气补充未来七天预报，
+最后由 Java 完成预算、时间和行程结构校验。外部服务不可用时自动降级到规则解析和演示景点。
+
+密钥只通过环境变量注入，参考 [`.env.example`](.env.example)，不要提交真实值：
+
+```powershell
+$env:DEEPSEEK_API_KEY = "你的密钥"
+$env:DEEPSEEK_MODEL = "deepseek-v4-flash"
+$env:SPRING_AI_MODEL_CHAT = "deepseek"
+$env:AMAP_API_KEY = "你的高德 Web 服务 Key"
+$env:QWEATHER_API_HOST = "https://你的专属域名.re.qweatherapi.com"
+$env:QWEATHER_API_KEY = "你的和风 API Key"
+
+mvn -f backend/pom.xml spring-boot:run
+```
+
+请求示例：
+
+```json
+{
+  "message": "从北京去杭州玩 4 天，2 人，预算 8000，想轻松一点，不吃辣，不要购物"
+}
+```
+
+前端页面位于 `/trips`。第一版是同步生成；对话修改、异步工作流和行程持久化作为后续迭代。
+
 ## 接口契约（前后端唯一可信源）
 
 接口结构只保留一份来源：**后端的 DTO 与 Controller**，经 `docs/openapi.json` 传给前端。

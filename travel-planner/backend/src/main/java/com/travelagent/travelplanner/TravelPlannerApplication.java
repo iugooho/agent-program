@@ -7,15 +7,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * travel-planner 的入口类。
+ * 旅游规划智能体系统的 Spring Boot Web 应用入口。
  *
- * <p>脚手架只提供最小可运行骨架：业务代码请在 com.travelagent.travelplanner 下按领域拆分包，
- * 不要把逻辑堆在入口类里。</p>
+ * <p>业务代码在 com.travelagent.travelplanner 下按领域拆分包，入口类只负责启动应用。</p>
  */
 @SpringBootApplication
-public class App {
+public class TravelPlannerApplication {
 
-    private static final Logger log = LoggerFactory.getLogger(App.class);
+    private static final Logger log = LoggerFactory.getLogger(TravelPlannerApplication.class);
 
     /**
      * 程序入口。
@@ -23,7 +22,7 @@ public class App {
      * @param args 命令行参数
      */
     public static void main(String[] args) {
-        SpringApplication.run(App.class, args);
+        SpringApplication.run(TravelPlannerApplication.class, args);
         log.info(greeting());
     }
 

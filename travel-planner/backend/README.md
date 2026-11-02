@@ -23,17 +23,28 @@ mvn -Pquality verify    # 代码规范检查（Checkstyle）
 ├── scripts/                   # 常用命令封装
 └── src
     ├── main/java/com/travelagent/travelplanner/
-    │   ├── App.java            # 启动类（Spring Boot 应用入口）
-    │   └── api/                # REST 接口与统一响应结构
+    │   ├── TravelPlannerApplication.java  # Spring Boot 应用入口
+    │   ├── config/             # Spring、Web、安全、持久化配置
+    │   ├── common/             # 跨模块公共能力
+    │   ├── api/                # 全局 REST 响应与异常处理
+    │   ├── demo/               # 示例模块，可删除
+    │   └── itinerary/          # 行程模块（按业务能力分层）
     ├── main/resources/         # application.yml、日志配置、数据库迁移脚本
     └── test/java/com/travelagent/travelplanner/
 ```
 
 建议的分层依赖方向：`api → application → domain`，`infrastructure` 实现 `domain` 定义的接口。
 
+标准 Spring Boot Web 约定：
+
+- `TravelPlannerApplication` 只负责启动，不承载业务逻辑。
+- `config/` 放全局配置；`common/` 放跨模块公共能力。
+- 业务模块按 `api/application/domain/infrastructure` 分层，模块之间不直接依赖对方的 `infrastructure`。
+- `api` 只负责 HTTP 适配，`application` 负责用例编排，`domain` 保持框架无关，`infrastructure` 负责数据库和外部服务。
+
 ## 依赖
 
-当前已引入：spring-boot-starter-web, spring-boot-starter-security, spring-boot-starter-validation, spring-boot-starter-actuator, mybatis-plus-spring-boot3-starter, flyway-core, mysql-connector-j, h2, springdoc-openapi-starter-webmvc-ui, spring-boot-starter-websocket, spring-boot-starter-test, logback-classic, flyway-mysql, mybatis-plus-jsqlparser
+当前已引入：spring-boot-starter-web, spring-boot-starter-security, spring-boot-starter-validation, spring-boot-starter-actuator, mybatis-plus-spring-boot3-starter, flyway-core, mysql-connector-j, h2, springdoc-openapi-starter-webmvc-ui, spring-boot-starter-websocket, spring-ai-starter-model-deepseek, spring-boot-starter-test, logback-classic, flyway-mysql, mybatis-plus-jsqlparser
 
 - Spring Boot 官方依赖的版本由 `spring-boot-dependencies`（BOM 3.5.16）统一管理，dependency 里不写版本号。
 - 第三方依赖（MyBatis-Plus、SpringDoc、Druid）的版本集中写在 `<properties>` 里，不要在 dependency 中重复写。
