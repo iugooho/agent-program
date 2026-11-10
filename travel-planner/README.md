@@ -16,7 +16,7 @@ mvn -f backend/pom.xml test
 # 后端：启动服务（默认 8080）
 mvn -f backend/pom.xml spring-boot:run
 
-# 前端：安装依赖并启动开发服务器（默认 http://localhost:5173）
+# 前端：安装依赖并启动开发服务器（固定使用 http://localhost:5174）
 cd frontend
 npm install
 npm run dev
@@ -28,12 +28,75 @@ Windows 下一键启动（后端在新窗口运行，前端在当前窗口）：
 .\scripts\dev.ps1
 ```
 
+### 本机 Redis
+
+`local` profile 默认启用本机 Redis，用于邮箱验证码和登录会话撤销。Redis 若设置了
+`requirepass`，启动前通过环境变量注入密码；密码不要写进仓库配置：
+
+```powershell
+$env:APP_AUTH_REDIS_ENABLED = "true"
+$env:APP_REDIS_HOST = "127.0.0.1"
+$env:APP_REDIS_PORT = "6380"
+$env:APP_REDIS_PASSWORD = "你的本机 Redis 密码"
+$env:APP_REDIS_DATABASE = "0"
+$env:APP_REDIS_SSL = "false"
+$env:APP_REDIS_TIMEOUT = "2s"
+
+mvn -f backend/pom.xml spring-boot:run
+```
+
+自动化测试会强制关闭 Redis，继续使用内存实现，因此不依赖开发机上的 Redis 服务。
+
 ## 联调约定
 
 - 前端开发服务器已把 `/api` 代理到 `http://localhost:8080`（见 `frontend/vite.config.ts`），后端监听 8080 即可。
 - 后端健康检查：GET /api/v1/health；前端封装在 `frontend/src/api/health.ts`。
 - 后端 artifactId 为 `travel-planner-backend`，前端包名为 `travel-planner-frontend`。
 - Java 版本：21；包名：com.travelagent.travelplanner。
+
+## 权限模型
+
+- `USER` 与 `ADMIN` 角色写入 JWT；JWT 过滤器恢复为 `ROLE_USER`、`ROLE_ADMIN`。
+- `/api/v1/admin/**` 在 URL 级统一要求 `ADMIN`，普通用户返回 403。
+- 后台 Controller 的业务方法仍应叠加 `@PreAuthorize("hasRole('ADMIN')")`，防止路由调整后丢失角色约束。
+- 业务资源查询必须同时使用当前用户 ID 和资源 ID，不能只按资源 ID 查询后直接返回。
+- 后续新增资源归属测试：用户 A 访问用户 B 的资源必须返回 403 或 404，不能返回资源内容。
+
+### 本地 RBAC 手动演示
+
+`local` profile 会自动创建两个账号：
+
+| 角色 | 账号 | 密码 |
+| --- | --- | --- |
+| 普通用户 | `demo` | `Demo123456` |
+| 管理员 | `admin` | `Admin123456` |
+
+IDEA 运行配置选择“backend: local demo (H2)”。原来的
+“backend: spring-boot:run”连接的是 MySQL `prod` 环境，不会执行本地演示账号初始化。
+
+启动后访问 `http://127.0.0.1:5174`，登录任一账号，再进入“权限验证”页面：
+
+- 普通用户显示“访问被拒绝”，接口返回 403。
+- 管理员显示“访问通过”，并展示 `ADMIN` 角色和校验结果。
+
+如果本机 Redis 未启动，可临时关闭 Redis 验证：
+
+```powershell
+$env:APP_AUTH_REDIS_ENABLED = "false"
+mvn -f backend/pom.xml spring-boot:run
+```
+
+### 人机验证与接口限流
+
+账号相关页面使用自托管 SVG 图形验证码：
+
+- 发送登录或注册邮箱验证码前必须完成人机验证。
+- 同一账号和客户端连续密码失败 3 次后，下一次登录返回 `428 / code=1010` 并显示登录验证码。
+- CAPTCHA 挑战与当前业务请求一起校验，答案提交后立即消费；默认 2 分钟有效，并绑定 IP、User-Agent 和用途。
+- 普通接口、认证接口和 CAPTCHA 接口分别做 Redis 原子限流；超限返回 `429 / code=1012`。
+- 邮箱验证码额外限制同一客户端每小时最多发送 10 次。
+
+可以通过 `.env.example` 中的 `APP_CAPTCHA_*` 和 `APP_RATE_LIMIT_*` 调整参数。
 
 ## 旅行规划智能体
 

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -39,6 +40,18 @@ public class GlobalExceptionHandler {
         ErrorCode errorCode = exception.errorCode();
         log.warn("业务异常 code={} message={}", errorCode.code(), exception.getMessage());
         return build(errorCode, exception.getMessage());
+    }
+
+    /**
+     * 方法级授权失败：例如 {@code @PreAuthorize} 拒绝普通用户访问管理员操作。
+     *
+     * @param exception 授权异常
+     * @return 统一 403 响应
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException exception) {
+        log.warn("访问被拒绝 message={}", exception.getMessage());
+        return build(ErrorCode.FORBIDDEN, ErrorCode.FORBIDDEN.message());
     }
 
     /**

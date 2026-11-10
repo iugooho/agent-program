@@ -12,6 +12,7 @@ import com.travelagent.travelplanner.itinerary.domain.DayPlan;
 import com.travelagent.travelplanner.itinerary.domain.Itinerary;
 import com.travelagent.travelplanner.itinerary.domain.ItineraryItem;
 import com.travelagent.travelplanner.itinerary.domain.TripRequest;
+import com.travelagent.travelplanner.support.WebMvcSecurityTestSupport;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -28,7 +29,7 @@ import org.springframework.test.web.servlet.MockMvc;
 /** 旅行规划接口的 MockMvc 测试。 */
 @WebMvcTest(TripController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class TripControllerTest {
+class TripControllerTest extends WebMvcSecurityTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

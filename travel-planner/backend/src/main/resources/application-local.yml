@@ -11,3 +11,13 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
+app:
+  auth:
+    redis:
+      enabled: ${APP_AUTH_REDIS_ENABLED:true}
+      port: ${APP_REDIS_PORT:6380}
+    jwt:
+      secret: ${APP_JWT_SECRET:local-development-jwt-secret-change-me-123456}
+    email:
+      mode: ${APP_EMAIL_MODE:local}

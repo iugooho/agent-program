@@ -28,6 +28,46 @@ spring:
         temperature: 0.1
 
 app:
+  auth:
+    jwt:
+      secret: ${APP_JWT_SECRET:}
+      issuer: ${APP_JWT_ISSUER:travel-planner}
+      access-ttl: ${APP_JWT_ACCESS_TTL:15m}
+      refresh-ttl: ${APP_JWT_REFRESH_TTL:7d}
+    email-code:
+      ttl: ${APP_EMAIL_CODE_TTL:5m}
+      retry-after: ${APP_EMAIL_CODE_RETRY_AFTER:60s}
+    captcha:
+      challenge-ttl: ${APP_CAPTCHA_CHALLENGE_TTL:2m}
+      max-login-failures: ${APP_CAPTCHA_LOGIN_FAILURES:3}
+      failure-window: ${APP_CAPTCHA_FAILURE_WINDOW:10m}
+    rate-limit:
+      enabled: ${APP_RATE_LIMIT_ENABLED:true}
+      trust-forwarded-header: ${APP_RATE_LIMIT_TRUST_FORWARDED:false}
+      general-per-minute: ${APP_RATE_LIMIT_GENERAL:120}
+      auth-per-minute: ${APP_RATE_LIMIT_AUTH:60}
+      captcha-per-minute: ${APP_RATE_LIMIT_CAPTCHA:20}
+    redis:
+      # 旧变量 APP_REDIS_ENABLED 不再生效，避免历史 false 值让验证码退回进程内存。
+      enabled: ${APP_AUTH_REDIS_ENABLED:true}
+      host: ${APP_REDIS_HOST:127.0.0.1}
+      port: ${APP_REDIS_PORT:6379}
+      password: ${APP_REDIS_PASSWORD:}
+      database: ${APP_REDIS_DATABASE:0}
+      ssl: ${APP_REDIS_SSL:false}
+      timeout: ${APP_REDIS_TIMEOUT:2s}
+    email:
+      mode: ${APP_EMAIL_MODE:disabled}
+      host: ${APP_EMAIL_HOST:smtp.163.com}
+      port: ${APP_EMAIL_PORT:465}
+      username: ${APP_EMAIL_USERNAME:}
+      password: ${APP_EMAIL_PASSWORD:}
+      from: ${APP_EMAIL_FROM:}
+      ssl-enabled: ${APP_EMAIL_SSL_ENABLED:true}
+      starttls-enabled: ${APP_EMAIL_STARTTLS_ENABLED:false}
+      connect-timeout: ${APP_EMAIL_CONNECT_TIMEOUT:10s}
+      read-timeout: ${APP_EMAIL_READ_TIMEOUT:30s}
+      write-timeout: ${APP_EMAIL_WRITE_TIMEOUT:30s}
   travel:
     amap:
       base-url: ${AMAP_BASE_URL:https://restapi.amap.com}
@@ -38,7 +78,7 @@ app:
       api-key: ${QWEATHER_API_KEY:}
   cors:
     # 前端独立部署时把正式域名加进来，多个用逗号分隔
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173}
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174}
 
 management:
   endpoints:

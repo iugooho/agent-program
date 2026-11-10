@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia } from 'pinia'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
 import App from '@/App.vue'
@@ -10,6 +11,9 @@ import HomeView from '@/views/HomeView.vue'
 const DashboardStub = { name: 'DashboardStub', render: () => null }
 const DemoStub = { name: 'DemoStub', render: () => null }
 const TripsStub = { name: 'TripsStub', render: () => null }
+const LoginStub = { name: 'LoginStub', render: () => null }
+const RegisterStub = { name: 'RegisterStub', render: () => null }
+const AdminAccessStub = { name: 'AdminAccessStub', render: () => null }
 
 const router = createRouter({
   history: createMemoryHistory(),
@@ -17,7 +21,10 @@ const router = createRouter({
     { path: '/', component: HomeView },
     { path: '/dashboard', component: DashboardStub },
     { path: '/demo', component: DemoStub },
-    { path: '/trips', component: TripsStub }
+    { path: '/trips', component: TripsStub },
+    { path: '/admin/access', component: AdminAccessStub },
+    { path: '/login', component: LoginStub },
+    { path: '/register', component: RegisterStub }
   ]
 })
 
@@ -26,7 +33,7 @@ describe('App', () => {
     await router.push('/')
     await router.isReady()
 
-    const wrapper = mount(App, { global: { plugins: [router] } })
+    const wrapper = mount(App, { global: { plugins: [createPinia(), router] } })
 
     expect(wrapper.text()).toContain('travel-planner')
   })

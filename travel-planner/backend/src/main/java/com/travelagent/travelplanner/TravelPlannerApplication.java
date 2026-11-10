@@ -31,6 +31,8 @@ public class TravelPlannerApplication {
      *
      * @return 欢迎语
      */
+
+
     public static String greeting() {
         return "Hello ";
     }

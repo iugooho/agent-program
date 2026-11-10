@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.travelagent.travelplanner.support.WebMvcSecurityTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
  */
 @WebMvcTest(HealthController.class)
 @AutoConfigureMockMvc(addFilters = false)
-class HealthControllerTest {
+class HealthControllerTest extends WebMvcSecurityTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

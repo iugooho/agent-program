@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.travelagent.travelplanner.common.error.ErrorCode;
+import com.travelagent.travelplanner.support.WebMvcSecurityTestSupport;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 @WebMvcTest(ErrorProbeController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @ActiveProfiles("error-probe")
-class GlobalExceptionHandlerTest {
+class GlobalExceptionHandlerTest extends WebMvcSecurityTestSupport {
 
     @Autowired
     private MockMvc mockMvc;

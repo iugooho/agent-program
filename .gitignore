@@ -16,6 +16,7 @@ dist/
 
 # IDE
 .idea/
+.run/
 *.iml
 *.ipr
 *.iws

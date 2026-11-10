@@ -19,7 +19,9 @@ public class WebCorsConfig implements WebMvcConfigurer {
      *
      * @param allowedOrigins 允许的前端来源，多个用逗号分隔
      */
-    public WebCorsConfig(@Value("${app.cors.allowed-origins:http://localhost:5173}") String allowedOrigins) {
+    public WebCorsConfig(@Value("${app.cors.allowed-origins:"
+            + "http://localhost:5173,http://127.0.0.1:5173,"
+            + "http://localhost:5174,http://127.0.0.1:5174}") String allowedOrigins) {
         this.allowedOrigins = allowedOrigins.split(",");
     }
 
