@@ -7,7 +7,7 @@
 
 ```bash
 npm install       # 安装依赖
-npm run dev       # 开发服务器 http://localhost:5173
+npm run dev       # 开发服务器 http://localhost:5174
 npm run build     # 生产构建（先做类型检查）
 npm run test      # Vitest 单元测试
 npm run coverage  # 覆盖率报告
@@ -18,6 +18,18 @@ npm run format    # Prettier（会自动改文件）
 只想检查不改文件（CI 用的就是这两条）：`npm run lint:ci`、`npm run format:check`。
 
 Windows 下也可以直接双击 `scripts\dev.cmd`。
+
+主要页面：
+
+| 路径 | 页面 |
+| --- | --- |
+| `/` | 首页 |
+| `/trips` | 智能旅行规划 |
+| `/dashboard` | 数据看板 |
+| `/profile` | 个人资料、安全设置和长期偏好 |
+| `/admin/access` | 后台权限校验 |
+| `/admin/rbac` | 超级管理员角色与权限分配 |
+| `/login`、`/register` | 登录和注册 |
 
 ## 目录结构
 

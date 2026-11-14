@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 class RiskControlServiceTest {
 
     @Test
-    @DisplayName("同一账号和客户端连续失败三次后要求 CAPTCHA")
+    @DisplayName("同一账号和客户端首次失败后要求 CAPTCHA")
     void requiresCaptchaAfterThreshold() {
         AuthProperties properties = new AuthProperties(
                 null,
@@ -22,16 +22,13 @@ class RiskControlServiceTest {
                 null,
                 new AuthProperties.Captcha(
                         Duration.ofMinutes(2),
-                        3,
+                        1,
                         Duration.ofMinutes(10)),
                 new AuthProperties.RateLimit(true, false, 120, 60, 20));
         RiskControlService service = new RiskControlService(
                 new InMemoryCounterStore(),
                 properties);
 
-        assertFalse(service.requiresCaptcha("demo", "client-a"));
-        service.recordFailure("demo", "client-a");
-        service.recordFailure("demo", "client-a");
         assertFalse(service.requiresCaptcha("demo", "client-a"));
         service.recordFailure("demo", "client-a");
         assertTrue(service.requiresCaptcha("demo", "client-a"));

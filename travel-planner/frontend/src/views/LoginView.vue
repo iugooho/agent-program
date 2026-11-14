@@ -72,11 +72,12 @@ async function submit(): Promise<void> {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/trips'
     await router.replace(redirect)
   } catch (error: unknown) {
-    if (error instanceof AuthApiError && error.code === 1010) {
+    if (error instanceof AuthApiError && (error.code === 1003 || error.code === 1010)) {
       loginCaptchaRequired.value = true
       loginCaptcha.value = null
       loginCaptchaKey.value += 1
-      errorMessage.value = '密码连续错误，请完成人机验证后重试'
+      errorMessage.value =
+        error.code === 1003 ? '账号或密码错误，请完成人机验证后重试' : '请完成人机验证后重试'
       return
     }
     if (error instanceof AuthApiError && error.code === 1011) {

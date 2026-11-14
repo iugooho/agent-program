@@ -10,9 +10,6 @@ import com.travelagent.travelplanner.auth.domain.UserAccount;
 import com.travelagent.travelplanner.auth.domain.UserRepository;
 import com.travelagent.travelplanner.common.error.BusinessException;
 import com.travelagent.travelplanner.common.error.ErrorCode;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Locale;
 import java.time.Duration;
@@ -101,7 +98,7 @@ public class AuthService {
         boolean validCode = emailCodeStore.consumeCode(
                 normalizedEmail,
                 EmailPurpose.REGISTER,
-                hashCode(normalizedEmail, EmailPurpose.REGISTER, emailCode.strip()));
+                EmailCodeHasher.hash(normalizedEmail, EmailPurpose.REGISTER, emailCode.strip()));
         if (!validCode) {
             throw new BusinessException(ErrorCode.EMAIL_CODE_INVALID);
         }
@@ -175,7 +172,7 @@ public class AuthService {
         boolean valid = emailCodeStore.consumeCode(
                 normalizedEmail,
                 EmailPurpose.LOGIN,
-                hashCode(normalizedEmail, EmailPurpose.LOGIN, emailCode.strip()));
+                EmailCodeHasher.hash(normalizedEmail, EmailPurpose.LOGIN, emailCode.strip()));
         if (!valid) {
             throw new BusinessException(ErrorCode.EMAIL_CODE_INVALID);
         }
@@ -242,7 +239,11 @@ public class AuthService {
             throw new BusinessException(ErrorCode.EMAIL_CODE_TOO_FREQUENT);
         }
         String code = String.format(Locale.ROOT, "%06d", RANDOM.nextInt(1_000_000));
-        emailCodeStore.saveCode(normalizedEmail, purpose, hashCode(normalizedEmail, purpose, code), options.ttl());
+        emailCodeStore.saveCode(
+                normalizedEmail,
+                purpose,
+                EmailCodeHasher.hash(normalizedEmail, purpose, code),
+                options.ttl());
         emailCodeSender.send(normalizedEmail, purpose, code);
         return new EmailCodeDelivery(options.ttl().toSeconds(), options.retryAfter().toSeconds());
     }
@@ -287,13 +288,4 @@ public class AuthService {
         return email.strip().toLowerCase(Locale.ROOT);
     }
 
-    private String hashCode(String email, EmailPurpose purpose, String code) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] value = (purpose.name() + ":" + email + ":" + code).getBytes(StandardCharsets.UTF_8);
-            return java.util.HexFormat.of().formatHex(digest.digest(value));
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 不可用", exception);
-        }
-    }
 }

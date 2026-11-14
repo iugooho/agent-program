@@ -64,7 +64,9 @@ class AuthIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.username").value("demo"))
-                .andExpect(jsonPath("$.data.role").value("USER"));
+                .andExpect(jsonPath("$.data.role").value("USER"))
+                .andExpect(jsonPath("$.data.roles[0]").value("USER"))
+                .andExpect(jsonPath("$.data.permissions[?(@ == 'trip.create')]").exists());
 
         mockMvc.perform(post("/api/v1/auth/refresh")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -190,20 +192,18 @@ class AuthIntegrationTest {
     }
 
     @Test
-    @DisplayName("连续密码失败三次后下一步登录必须完成人机验证")
+    @DisplayName("首次密码失败后后续登录必须完成人机验证")
     void repeatedPasswordFailuresRequireCaptcha() throws Exception {
         String username = "risk_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
         String body = objectMapper.writeValueAsString(java.util.Map.of(
                 "loginType", "PASSWORD",
                 "username", username,
                 "password", "WrongPassword1"));
-        for (int attempt = 0; attempt < 3; attempt++) {
-            mockMvc.perform(post("/api/v1/auth/login")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(body))
-                    .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.code").value(ErrorCode.BAD_CREDENTIALS.code()));
-        }
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value(ErrorCode.BAD_CREDENTIALS.code()));
 
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

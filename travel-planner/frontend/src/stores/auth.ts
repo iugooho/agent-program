@@ -17,6 +17,8 @@ export const useAuthStore = defineStore('auth', () => {
   const accessToken = ref<string | null>(getAccessToken())
   const user = ref<UserResponse | null>(null)
   const authenticated = computed(() => Boolean(accessToken.value))
+  const roles = computed(() => user.value?.roles ?? [])
+  const permissions = computed(() => user.value?.permissions ?? [])
 
   async function register(
     username: string,
@@ -103,9 +105,19 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
+  function can(permissionCode: string): boolean {
+    return permissions.value.includes(permissionCode)
+  }
+
+  function hasRole(roleCode: string): boolean {
+    return roles.value.includes(roleCode)
+  }
+
   return {
     user,
     authenticated,
+    roles,
+    permissions,
     register,
     loginWithPassword,
     loginWithEmailCode,
@@ -113,6 +125,8 @@ export const useAuthStore = defineStore('auth', () => {
     sendRegisterCode,
     restore,
     logout,
-    clearSession
+    clearSession,
+    can,
+    hasRole
   }
 })

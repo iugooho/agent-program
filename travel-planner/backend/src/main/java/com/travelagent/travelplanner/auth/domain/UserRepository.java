@@ -30,6 +30,24 @@ public interface UserRepository {
     Optional<UserAccount> findById(long id);
 
     /**
+     * 更新用户账号资料。
+     *
+     * @param userId 用户主键
+     * @param username 登录账号
+     * @param email 登录邮箱
+     * @param passwordHash 密码哈希
+     * @param nickname 昵称
+     * @param phone 联系电话
+     */
+    void updateProfile(
+            long userId,
+            String username,
+            String email,
+            String passwordHash,
+            String nickname,
+            String phone);
+
+    /**
      * 创建新用户。
      *
      * @param username 登录账号

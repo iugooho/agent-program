@@ -8,10 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelagent.travelplanner.api.ApiResponse;
-import com.travelagent.travelplanner.auth.application.TokenService;
-import com.travelagent.travelplanner.auth.domain.UserAccount;
 import com.travelagent.travelplanner.common.error.ErrorCode;
-import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,9 +34,6 @@ class SecurityAuthorizationTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private TokenService tokenService;
-
-    @Autowired
     private ObjectMapper objectMapper;
 
     @Autowired
@@ -58,7 +52,7 @@ class SecurityAuthorizationTest {
     @DisplayName("普通用户访问后台路径返回 403")
     void standardUserCannotAccessAdminPath() throws Exception {
         mockMvc.perform(get("/api/v1/admin/security-probe")
-                        .header(HttpHeaders.AUTHORIZATION, bearer("USER")))
+                        .header(HttpHeaders.AUTHORIZATION, bearerByLogin("demo", "Demo123456")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(ErrorCode.FORBIDDEN.code()));
     }
@@ -67,7 +61,7 @@ class SecurityAuthorizationTest {
     @DisplayName("管理员可以访问后台路径")
     void adminCanAccessAdminPath() throws Exception {
         mockMvc.perform(get("/api/v1/admin/security-probe")
-                        .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN")))
+                        .header(HttpHeaders.AUTHORIZATION, bearerByLogin("admin", "Admin123456")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(ApiResponse.CODE_SUCCESS))
                 .andExpect(jsonPath("$.data").value("admin"));
@@ -80,7 +74,7 @@ class SecurityAuthorizationTest {
                         .header(HttpHeaders.AUTHORIZATION, bearerByLogin("admin", "Admin123456")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.username").value("admin"))
-                .andExpect(jsonPath("$.data.role").value("ADMIN"))
+                .andExpect(jsonPath("$.data.role").value("SUPER_ADMIN"))
                 .andExpect(jsonPath("$.data.accessGranted").value(true));
     }
 
@@ -97,30 +91,14 @@ class SecurityAuthorizationTest {
     @DisplayName("方法级 PreAuthorize 拒绝普通用户并允许管理员")
     void methodSecurityEnforcesAdminRole() throws Exception {
         mockMvc.perform(get("/api/v1/internal/security-probe")
-                        .header(HttpHeaders.AUTHORIZATION, bearer("USER")))
+                        .header(HttpHeaders.AUTHORIZATION, bearerByLogin("demo", "Demo123456")))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value(ErrorCode.FORBIDDEN.code()));
 
         mockMvc.perform(get("/api/v1/internal/security-probe")
-                        .header(HttpHeaders.AUTHORIZATION, bearer("ADMIN")))
+                        .header(HttpHeaders.AUTHORIZATION, bearerByLogin("admin", "Admin123456")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data").value("admin"));
-    }
-
-    private String bearer(String role) {
-        UserAccount user = new UserAccount(
-                1L,
-                role.toLowerCase() + "-security-test",
-                role.toLowerCase() + "-security-test@example.com",
-                "unused-password-hash",
-                role,
-                "ACTIVE",
-                "Security Test",
-                null,
-                LocalDateTime.now(),
-                null);
-        String token = tokenService.issue(user).accessToken();
-        return "Bearer " + token;
     }
 
     private String bearerByLogin(String username, String password) throws Exception {
@@ -149,7 +127,7 @@ class SecurityAuthorizationTest {
         }
 
         @GetMapping("/api/v1/internal/security-probe")
-        @PreAuthorize("hasRole('ADMIN')")
+        @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
         ApiResponse<String> methodProtected() {
             return ApiResponse.ok("admin");
         }

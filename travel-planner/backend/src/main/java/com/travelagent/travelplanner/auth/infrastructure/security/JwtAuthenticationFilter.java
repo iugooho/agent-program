@@ -4,12 +4,17 @@ import com.travelagent.travelplanner.auth.application.AccessTokenClaims;
 import com.travelagent.travelplanner.auth.application.TokenService;
 import com.travelagent.travelplanner.auth.domain.SessionRevocationStore;
 import com.travelagent.travelplanner.common.error.BusinessException;
+import com.travelagent.travelplanner.rbac.domain.EffectiveAuthorization;
+import com.travelagent.travelplanner.rbac.domain.RbacRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import org.springframework.http.HttpHeaders;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -26,16 +31,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
     private final SessionRevocationStore sessionRevocationStore;
+    private final RbacRepository rbacRepository;
 
     /**
      * 创建 JWT 过滤器。
      *
      * @param tokenService 令牌服务
      * @param sessionRevocationStore 会话撤销存储
+     * @param rbacRepository RBAC 仓储
      */
-    public JwtAuthenticationFilter(TokenService tokenService, SessionRevocationStore sessionRevocationStore) {
+    public JwtAuthenticationFilter(
+            TokenService tokenService,
+            SessionRevocationStore sessionRevocationStore,
+            RbacRepository rbacRepository) {
         this.tokenService = tokenService;
         this.sessionRevocationStore = sessionRevocationStore;
+        this.rbacRepository = rbacRepository;
     }
 
     @Override
@@ -57,17 +68,49 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (sessionRevocationStore.isRevoked(claims.sessionId())) {
                 return;
             }
+            EffectiveAuthorization authorization =
+                    rbacRepository.findEffectiveAuthorization(claims.userId());
+            String primaryRole = primaryRole(authorization.roles(), claims.role());
             AuthenticatedUser principal = new AuthenticatedUser(
-                    claims.userId(), claims.username(), claims.role(), claims.sessionId());
+                    claims.userId(),
+                    claims.username(),
+                    primaryRole,
+                    claims.sessionId(),
+                    authorization.roles(),
+                    authorization.permissions());
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     principal,
                     null,
-                    List.of(new SimpleGrantedAuthority("ROLE_" + claims.role())));
+                    authorities(authorization));
             SecurityContext context = SecurityContextHolder.createEmptyContext();
             context.setAuthentication(authentication);
             SecurityContextHolder.setContext(context);
         } catch (BusinessException exception) {
             SecurityContextHolder.clearContext();
         }
+    }
+
+    private List<SimpleGrantedAuthority> authorities(EffectiveAuthorization authorization) {
+        Set<String> values = new LinkedHashSet<>();
+        authorization.roles().stream()
+                .map(role -> "ROLE_" + role)
+                .forEach(values::add);
+        values.addAll(authorization.permissions());
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        values.forEach(value -> authorities.add(new SimpleGrantedAuthority(value)));
+        return List.copyOf(authorities);
+    }
+
+    private String primaryRole(List<String> roles, String fallbackRole) {
+        if (roles.contains("SUPER_ADMIN")) {
+            return "SUPER_ADMIN";
+        }
+        if (roles.contains("ADMIN")) {
+            return "ADMIN";
+        }
+        if (roles.contains("USER")) {
+            return "USER";
+        }
+        return fallbackRole;
     }
 }

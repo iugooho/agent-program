@@ -14,6 +14,8 @@ const TripsStub = { name: 'TripsStub', render: () => null }
 const LoginStub = { name: 'LoginStub', render: () => null }
 const RegisterStub = { name: 'RegisterStub', render: () => null }
 const AdminAccessStub = { name: 'AdminAccessStub', render: () => null }
+const RbacAdminStub = { name: 'RbacAdminStub', render: () => null }
+const ForbiddenStub = { name: 'ForbiddenStub', render: () => null }
 
 const router = createRouter({
   history: createMemoryHistory(),
@@ -23,6 +25,8 @@ const router = createRouter({
     { path: '/demo', component: DemoStub },
     { path: '/trips', component: TripsStub },
     { path: '/admin/access', component: AdminAccessStub },
+    { path: '/admin/rbac', component: RbacAdminStub },
+    { path: '/403', component: ForbiddenStub },
     { path: '/login', component: LoginStub },
     { path: '/register', component: RegisterStub }
   ]

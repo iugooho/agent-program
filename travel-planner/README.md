@@ -28,6 +28,84 @@ Windows 下一键启动（后端在新窗口运行，前端在当前窗口）：
 .\scripts\dev.ps1
 ```
 
+### Docker Desktop 安装与 Docker Compose 启动
+
+项目提供 `docker-compose.yml`，一次启动 MySQL 8、Redis、Spring Boot 后端和 Vue 前端。
+
+Windows 推荐安装 Docker Desktop，并在安装时启用 WSL 2。Docker Desktop 已包含 Docker Engine、
+`docker` CLI 和 `docker compose`，不需要再单独安装 CLI。安装后启动 Docker Desktop，确认 Engine 正常运行：
+
+```powershell
+docker --version
+docker compose version
+```
+
+首次运行前复制环境变量示例并修改密码与 JWT 密钥：
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d --build
+```
+
+Compose 主要配置项：
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `MYSQL_ROOT_PASSWORD` | `root123456` | MySQL root 密码，生产必须修改 |
+| `MYSQL_DATABASE` | `travel` | 业务数据库名 |
+| `MYSQL_USER` | `travel` | 后端使用的 MySQL 用户 |
+| `MYSQL_PASSWORD` | `travel123456` | 后端数据库密码，生产必须修改 |
+| `REDIS_PASSWORD` | `redis123456` | Redis 密码，生产必须修改 |
+| `APP_JWT_SECRET` | 开发默认值 | JWT 签名密钥，至少 32 字节，生产必须修改 |
+| `APP_BOOTSTRAP_ADMIN_USERNAME` | `admin` | 首次启动创建的管理员账号 |
+| `APP_BOOTSTRAP_ADMIN_PASSWORD` | `Admin123456` | 首次启动创建的管理员密码，生产必须修改 |
+| `MYSQL_PORT` | `3307` | 宿主机 MySQL 端口，避免与本机 3306 冲突 |
+| `REDIS_PORT` | `6381` | 宿主机 Redis 端口 |
+| `BACKEND_PORT` | `8080` | 宿主机后端端口 |
+| `FRONTEND_PORT` | `5174` | 宿主机前端端口 |
+
+`.env` 已被 Git 忽略，不能提交真实密码。生产环境需要替换所有默认凭据。
+
+启动完成后：
+
+- 前端：`http://localhost:5174`
+- 后端健康检查：`http://localhost:8080/api/v1/health`
+- MySQL：`localhost:3307`
+- Redis：`localhost:6381`
+
+全新数据库默认创建 Docker 管理员：
+
+```text
+用户名：admin
+密码：Admin123456
+```
+
+管理员凭据、数据库密码和 JWT 密钥都可以在 `.env` 中修改。生产环境不能继续使用示例默认值。
+
+Docker 开发环境使用本地邮箱发件箱模拟验证码投递，验证码不打印到普通应用日志：
+
+```powershell
+docker compose exec backend cat /app/target/local-email-outbox.log
+```
+
+查看状态和日志：
+
+```powershell
+docker compose ps
+docker compose logs -f backend
+```
+
+停止服务：
+
+```powershell
+docker compose down
+```
+
+数据库和 Redis 数据保存在 Docker volume 中，`docker compose down` 不会删除数据；需要清空时才使用 `docker compose down -v`。
+
+Docker Desktop 不可用时，仍可按前文的“快速开始”和“本机 Redis”方式运行，但需要自行保证
+MySQL、Redis、Java 和 Node.js 的版本与配置一致。
+
 ### 本机 Redis
 
 `local` profile 默认启用本机 Redis，用于邮箱验证码和登录会话撤销。Redis 若设置了
@@ -56,9 +134,10 @@ mvn -f backend/pom.xml spring-boot:run
 
 ## 权限模型
 
-- `USER` 与 `ADMIN` 角色写入 JWT；JWT 过滤器恢复为 `ROLE_USER`、`ROLE_ADMIN`。
-- `/api/v1/admin/**` 在 URL 级统一要求 `ADMIN`，普通用户返回 403。
-- 后台 Controller 的业务方法仍应叠加 `@PreAuthorize("hasRole('ADMIN')")`，防止路由调整后丢失角色约束。
+- 第一版采用最小 RBAC：`USER`、`ADMIN`、`SUPER_ADMIN` 三个角色。
+- 用户与角色、角色与权限分别存于 `sys_user_role`、`sys_role_permission`；JWT 只负责身份，权限每次按用户 ID 从数据库恢复。
+- `/api/v1/admin/**` 在 URL 级要求 `ADMIN` 或 `SUPER_ADMIN`，具体操作继续用 `@PreAuthorize("hasAuthority('...')")` 校验权限点。
+- 超级管理员专属接口同时要求 `ROLE_SUPER_ADMIN` 和 `admin.rbac.manage`。
 - 业务资源查询必须同时使用当前用户 ID 和资源 ID，不能只按资源 ID 查询后直接返回。
 - 后续新增资源归属测试：用户 A 访问用户 B 的资源必须返回 403 或 404，不能返回资源内容。
 
@@ -77,7 +156,15 @@ IDEA 运行配置选择“backend: local demo (H2)”。原来的
 启动后访问 `http://127.0.0.1:5174`，登录任一账号，再进入“权限验证”页面：
 
 - 普通用户显示“访问被拒绝”，接口返回 403。
-- 管理员显示“访问通过”，并展示 `ADMIN` 角色和校验结果。
+- 超级管理员显示“访问通过”，并展示 `SUPER_ADMIN` 角色和校验结果。
+
+本地管理员同时拥有 `SUPER_ADMIN`，登录后可从顶部导航进入“权限分配”：
+
+```text
+http://127.0.0.1:5174/admin/rbac
+```
+
+页面左侧选择角色、中间勾选功能权限、右侧给用户分配角色。超级管理员角色固定拥有全部权限，避免误操作导致权限管理入口失效；系统同时禁止移除最后一个超级管理员。
 
 如果本机 Redis 未启动，可临时关闭 Redis 验证：
 
@@ -91,7 +178,7 @@ mvn -f backend/pom.xml spring-boot:run
 账号相关页面使用自托管 SVG 图形验证码：
 
 - 发送登录或注册邮箱验证码前必须完成人机验证。
-- 同一账号和客户端连续密码失败 3 次后，下一次登录返回 `428 / code=1010` 并显示登录验证码。
+- 账号密码首次输入错误后，页面立即显示登录验证码；未携带有效验证码的后续请求返回 `428 / code=1010`。
 - CAPTCHA 挑战与当前业务请求一起校验，答案提交后立即消费；默认 2 分钟有效，并绑定 IP、User-Agent 和用途。
 - 普通接口、认证接口和 CAPTCHA 接口分别做 Redis 原子限流；超限返回 `429 / code=1012`。
 - 邮箱验证码额外限制同一客户端每小时最多发送 10 次。
@@ -126,6 +213,47 @@ mvn -f backend/pom.xml spring-boot:run
 ```
 
 前端页面位于 `/trips`。第一版是同步生成；对话修改、异步工作流和行程持久化作为后续迭代。
+
+## 当前已实现接口
+
+以下列表以当前后端 Controller 和 OpenAPI 契约为准，不代表需求文档中的全部 58 个目标接口。
+
+### 认证与用户
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/v1/auth/register` | 邮箱验证码注册 |
+| POST | `/api/v1/auth/login` | 账号密码或邮箱验证码登录 |
+| POST | `/api/v1/auth/refresh` | 刷新令牌 |
+| POST | `/api/v1/auth/logout` | 撤销当前登录会话 |
+| POST | `/api/v1/auth/email-code` | 发送 REGISTER、LOGIN 或 UPDATE_PROFILE 验证码 |
+| POST | `/api/v1/auth/captcha/challenge` | 获取 SVG 图形验证码 |
+| GET | `/api/v1/users/me` | 当前用户资料、角色和权限 |
+| PUT | `/api/v1/users/me` | 更新基础资料或安全资料 |
+| GET | `/api/v1/users/me/preferences` | 获取长期旅行偏好 |
+| PUT | `/api/v1/users/me/preferences` | 更新长期旅行偏好 |
+
+账号密码首次输入错误后必须完成人机验证。修改用户名、密码或邮箱时，必须验证当前邮箱；修改邮箱时还必须验证新邮箱。
+
+### RBAC 管理
+
+| 方法 | 路径 | 权限 |
+| --- | --- | --- |
+| GET | `/api/v1/admin/rbac/overview` | 超级管理员 |
+| PUT | `/api/v1/admin/rbac/roles/{roleId}/permissions` | 超级管理员 |
+| PUT | `/api/v1/admin/rbac/users/{userId}/roles` | 超级管理员 |
+| GET | `/api/v1/admin/access-check` | `admin.console.access` |
+
+基础角色为 `USER`、`ADMIN`、`SUPER_ADMIN`。超级管理员固定拥有全部权限，系统禁止移除最后一个超级管理员。
+
+### 智能规划与基础接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/v1/trips/plan` | 同步生成旅行计划 |
+| GET | `/api/v1/health` | 统一业务健康检查 |
+| GET | `/actuator/health` | Spring Boot 健康检查 |
+| GET | `/api/v1/demo/hello` | 登录态接口自检 |
 
 ## 接口契约（前后端唯一可信源）
 

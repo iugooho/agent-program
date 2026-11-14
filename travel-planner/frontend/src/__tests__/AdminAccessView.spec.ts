@@ -34,7 +34,14 @@ describe('AdminAccessView', () => {
       email: 'admin@example.com',
       nickname: '本地管理员',
       phone: '',
-      role: 'ADMIN',
+      role: 'SUPER_ADMIN',
+      roles: ['ADMIN', 'SUPER_ADMIN'],
+      permissions: [
+        'admin.console.access',
+        'admin.audit.read',
+        'admin.rbac.manage',
+        'admin.user.read'
+      ],
       status: 'ACTIVE',
       createTime: '2026-11-10T00:00:00'
     }
@@ -57,7 +64,13 @@ describe('AdminAccessView', () => {
 
   it('普通用户收到 403 时展示拒绝状态', async () => {
     const auth = useAuthStore()
-    auth.user = { ...auth.user!, username: 'demo', role: 'USER' }
+    auth.user = {
+      ...auth.user!,
+      username: 'demo',
+      role: 'USER',
+      roles: ['USER'],
+      permissions: ['trip.create', 'trip.read']
+    }
     mockedCheckAdminAccess.mockRejectedValue(new AdminAccessError(403, '无访问权限'))
 
     const wrapper = mount(AdminAccessView)

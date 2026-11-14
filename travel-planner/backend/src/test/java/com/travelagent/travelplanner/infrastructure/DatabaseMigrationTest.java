@@ -43,6 +43,16 @@ class DatabaseMigrationTest {
                     VALUES ('tester', 'tester@example.com', '$2a$10$placeholder', 'tester')
                     """);
 
+            try (ResultSet row = statement.executeQuery("SELECT COUNT(*) FROM sys_role")) {
+                assertTrue(row.next());
+                assertEquals(3, row.getInt(1), "应初始化三个基础角色");
+            }
+
+            try (ResultSet row = statement.executeQuery("SELECT COUNT(*) FROM sys_permission")) {
+                assertTrue(row.next());
+                assertEquals(9, row.getInt(1), "应初始化九个基础权限");
+            }
+
             try (ResultSet row = statement.executeQuery(
                     "SELECT id, role, status, create_time, update_time FROM users WHERE username = 'tester'")) {
                 assertTrue(row.next(), "应该能查到刚插入的用户");
@@ -88,5 +98,46 @@ class DatabaseMigrationTest {
                 .target("2")
                 .load();
         assertThrows(FlywayException.class, v2::migrate, "存在旧用户时必须阻止自动迁移");
+    }
+
+    @Test
+    @DisplayName("V3 将已有管理员迁移到最小 RBAC 并保留超级管理员入口")
+    void rbacMigrationBootstrapsExistingAdmin() throws Exception {
+        String url = "jdbc:h2:mem:migration_rbac_admin_test;MODE=MySQL;DB_CLOSE_DELAY=-1";
+        Flyway.configure()
+                .dataSource(url, USER, PASSWORD)
+                .locations("classpath:db/migration")
+                .target("2")
+                .load()
+                .migrate();
+
+        try (Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    INSERT INTO users (username, email, password_hash, role, status, nickname)
+                    VALUES ('legacy_admin', 'legacy-admin@example.com', '$2a$10$placeholder',
+                            'ADMIN', 'ACTIVE', 'legacy admin')
+                    """);
+        }
+
+        Flyway.configure()
+                .dataSource(url, USER, PASSWORD)
+                .locations("classpath:db/migration")
+                .load()
+                .migrate();
+
+        try (Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
+             Statement statement = connection.createStatement();
+             ResultSet row = statement.executeQuery("""
+                     SELECT COUNT(*)
+                     FROM sys_user_role ur
+                     JOIN sys_role r ON r.id = ur.role_id
+                     JOIN users u ON u.id = ur.user_id
+                     WHERE u.username = 'legacy_admin'
+                       AND r.code IN ('ADMIN', 'SUPER_ADMIN')
+                     """)) {
+            assertTrue(row.next());
+            assertEquals(2, row.getInt(1), "旧管理员应同时拥有 ADMIN 与 SUPER_ADMIN");
+        }
     }
 }

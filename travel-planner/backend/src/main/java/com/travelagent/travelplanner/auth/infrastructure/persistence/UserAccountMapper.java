@@ -56,6 +56,35 @@ public interface UserAccountMapper {
     UserAccountRow findById(@Param("id") long id);
 
     /**
+     * 更新用户资料。
+     *
+     * @param id 用户主键
+     * @param username 登录账号
+     * @param email 登录邮箱
+     * @param passwordHash 密码哈希
+     * @param nickname 昵称
+     * @param phone 联系电话
+     * @return 更新行数
+     */
+    @Update("""
+            UPDATE users
+            SET username = #{username},
+                email = #{email},
+                password_hash = #{passwordHash},
+                nickname = #{nickname},
+                phone = #{phone},
+                update_time = CURRENT_TIMESTAMP(6)
+            WHERE id = #{id}
+            """)
+    int updateProfile(
+            @Param("id") long id,
+            @Param("username") String username,
+            @Param("email") String email,
+            @Param("passwordHash") String passwordHash,
+            @Param("nickname") String nickname,
+            @Param("phone") String phone);
+
+    /**
      * 更新最近登录时间。
      *
      * @param id 用户主键
@@ -82,6 +111,24 @@ public interface UserAccountMapper {
             @Param("email") String email,
             @Param("passwordHash") String passwordHash,
             @Param("nickname") String nickname);
+
+    /**
+     * 为新用户分配内置角色。
+     *
+     * @param username 登录账号
+     * @param roleCode 角色编码
+     * @return 插入行数
+     */
+    @Insert("""
+            INSERT INTO sys_user_role (user_id, role_id)
+            SELECT u.id, r.id
+            FROM users u
+            JOIN sys_role r ON r.code = #{roleCode}
+            WHERE u.username = #{username}
+            """)
+    int assignRoleByUsername(
+            @Param("username") String username,
+            @Param("roleCode") String roleCode);
 
     /**
      * 创建本地开发账号。

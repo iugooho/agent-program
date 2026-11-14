@@ -7,12 +7,27 @@
 
 ```bash
 mvn compile             # 编译
-mvn test                # 单元测试（脚手架自带冒烟测试）
+mvn test                # 单元测试 + MockMvc 集成测试
 mvn spring-boot:run    # 启动服务
 mvn -Pquality verify    # 代码规范检查（Checkstyle）
 ```
 
 健康检查接口：GET /api/v1/health（默认端口 8080）。
+
+本地启动前需要配置 JWT 密钥；启用 Redis 时还需要配置 Redis 连接。完整环境变量见
+上一级目录的 [`.env.example`](../.env.example) 和 [README](../README.md)。
+
+当前认证与账号模块包括：
+
+- 账号密码、邮箱验证码注册和登录。
+- Access Token、Refresh Token、Redis 会话撤销。
+- JWT 认证、URL 级后台保护和 `@PreAuthorize` 方法级权限。
+- BCrypt 密码哈希。
+- SVG CAPTCHA、登录失败风控和 Redis 限流。
+- 用户资料、安全资料和长期偏好更新。
+- 最小 RBAC 与超级管理员权限分配。
+
+当前已实现接口以 [OpenAPI 契约](../docs/openapi.json) 为准。
 
 ## 目录结构
 
@@ -27,6 +42,8 @@ mvn -Pquality verify    # 代码规范检查（Checkstyle）
     │   ├── config/             # Spring、Web、安全、持久化配置
     │   ├── common/             # 跨模块公共能力
     │   ├── api/                # 全局 REST 响应与异常处理
+    │   ├── auth/               # 注册、登录、JWT、验证码、用户资料和偏好
+    │   ├── rbac/               # 角色、权限、用户角色和权限分配
     │   ├── demo/               # 示例模块，可删除
     │   └── itinerary/          # 行程模块（按业务能力分层）
     ├── main/resources/         # application.yml、日志配置、数据库迁移脚本
@@ -55,6 +72,7 @@ mvn -Pquality verify    # 代码规范检查（Checkstyle）
 - 编译目标 JDK 21，编译参数固定带 `-parameters -Xlint:all`。
 - `mvn -Pquality verify` 按 `config/checkstyle.xml` 检查代码，在 `verify` 阶段执行。
 - 接口一律返回统一响应结构 `ApiResponse`（code / message / data），参数校验、异常处理、日志脱敏在接口层完成。
+- 分页接口统一使用 `PageResult`（page / size / total / items）。
 - 失败一律带业务错误码：抛 `BusinessException`（`common/error`）或让 `@Valid` 失败，
   由 `api/GlobalExceptionHandler` 统一转成 `ApiResponse`，码表见 `../docs/error-codes.md`，
   Controller 不要自己 try-catch 拼响应。

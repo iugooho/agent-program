@@ -19,6 +19,16 @@ function handleExpired(): void {
   }
 }
 
+function roleLabel(): string {
+  if (auth.hasRole('SUPER_ADMIN')) {
+    return '超级管理员'
+  }
+  if (auth.hasRole('ADMIN')) {
+    return '管理员'
+  }
+  return '普通用户'
+}
+
 onMounted(() => {
   window.addEventListener('travel-planner:auth-expired', handleExpired)
   void auth.restore()
@@ -35,14 +45,16 @@ onBeforeUnmount(() => {
     <nav>
       <RouterLink to="/"> 首页 </RouterLink>
       <RouterLink to="/trips"> 智能规划 </RouterLink>
+      <RouterLink v-if="auth.authenticated" to="/profile"> 个人中心 </RouterLink>
       <RouterLink to="/dashboard"> 数据大屏 </RouterLink>
-      <RouterLink v-if="auth.authenticated" to="/admin/access"> 权限验证 </RouterLink>
+      <RouterLink v-if="auth.can('admin.console.access')" to="/admin/access"> 权限验证 </RouterLink>
+      <RouterLink v-if="auth.can('admin.rbac.manage')" to="/admin/rbac"> 权限分配 </RouterLink>
       <RouterLink to="/demo"> Demo </RouterLink>
     </nav>
     <div class="account">
       <span v-if="auth.user" class="user-summary">
         {{ auth.user.nickname || auth.user.username }}
-        <span class="role-badge">{{ auth.user.role === 'ADMIN' ? '管理员' : '普通用户' }}</span>
+        <span class="role-badge">{{ roleLabel() }}</span>
       </span>
       <button v-if="auth.authenticated" type="button" @click="handleLogout">退出登录</button>
       <template v-else>

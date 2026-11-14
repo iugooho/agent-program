@@ -28,6 +28,12 @@ spring:
         temperature: 0.1
 
 app:
+  bootstrap-admin:
+    enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:false}
+    username: ${APP_BOOTSTRAP_ADMIN_USERNAME:admin}
+    password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin123456}
+    email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@example.com}
+    nickname: ${APP_BOOTSTRAP_ADMIN_NICKNAME:Docker 管理员}
   auth:
     jwt:
       secret: ${APP_JWT_SECRET:}
@@ -39,7 +45,7 @@ app:
       retry-after: ${APP_EMAIL_CODE_RETRY_AFTER:60s}
     captcha:
       challenge-ttl: ${APP_CAPTCHA_CHALLENGE_TTL:2m}
-      max-login-failures: ${APP_CAPTCHA_LOGIN_FAILURES:3}
+      max-login-failures: ${APP_CAPTCHA_LOGIN_FAILURES:1}
       failure-window: ${APP_CAPTCHA_FAILURE_WINDOW:10m}
     rate-limit:
       enabled: ${APP_RATE_LIMIT_ENABLED:true}

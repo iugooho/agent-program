@@ -74,6 +74,21 @@ jobs:
       - name: 类型检查 + 生产构建
         run: npm run build
 
+  containers:
+    name: Docker · Compose 校验 + 镜像构建
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 校验 Docker Compose 配置
+        run: docker compose -f travel-planner/docker-compose.yml config
+
+      - name: 构建后端镜像
+        run: docker build -t travel-planner-backend:ci travel-planner/backend
+
+      - name: 构建前端镜像
+        run: docker build -t travel-planner-frontend:ci travel-planner/frontend
+
   scaffold-cli:
     name: 脚手架 · 测试 + Checkstyle
     runs-on: ubuntu-latest

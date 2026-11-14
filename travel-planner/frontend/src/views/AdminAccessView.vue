@@ -13,10 +13,13 @@ const message = ref('正在调用管理员接口…')
 const result = ref<AdminAccessResponse | null>(null)
 
 const roleLabel = computed(() => {
-  if (auth.user?.role === 'ADMIN') {
+  if (auth.hasRole('SUPER_ADMIN')) {
+    return '超级管理员'
+  }
+  if (auth.hasRole('ADMIN')) {
     return '管理员'
   }
-  if (auth.user?.role === 'USER') {
+  if (auth.hasRole('USER')) {
     return '普通用户'
   }
   return '未知角色'

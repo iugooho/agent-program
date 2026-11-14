@@ -33,7 +33,7 @@
 | 1007 | 429 | 邮箱验证码发送过于频繁 | 60 秒内重复发送 |
 | 1008 | 400 | 请求体格式错误 | body 不是合法 JSON、字段类型不匹配 |
 | 1009 | 405 | 请求方法不支持 | 路径存在但 HTTP 方法不对 |
-| 1010 | 428 | 需要人机验证 | 登录失败次数达到阈值，或敏感认证操作未提交 CAPTCHA 答案 |
+| 1010 | 428 | 需要人机验证 | 账号密码首次错误后的下一次登录，或敏感认证操作未提交 CAPTCHA 答案 |
 | 1011 | 400 | 人机验证无效 | 答案错误、挑战过期、用途不匹配或已消费 |
 | 1012 | 429 | 请求过于频繁 | IP 或业务操作超过 Redis 限流窗口 |
 | 2000 | 404 | 行程不存在 | 按 ID 查行程查不到 |
@@ -55,4 +55,5 @@ throw new BusinessException(ErrorCode.ACCOUNT_DISABLED);
 - `ErrorCode`、`BusinessException` 位于 `com.travelagent.travelplanner.common.error`。
 - 普通业务异常由 `GlobalExceptionHandler` 转成统一响应。
 - Security 过滤器链中的 401 / 403 由入口点和拒绝处理器返回 `code=401/403`。
+- 个人资源越权建议返回 `404 RESOURCE_NOT_FOUND`，避免泄露资源是否存在；后台功能权限不足返回 `403 FORBIDDEN`。
 - 日志不得记录密码、JWT、Refresh Token 或邮箱验证码。

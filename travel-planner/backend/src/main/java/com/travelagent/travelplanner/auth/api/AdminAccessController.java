@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-/** 管理员权限校验接口。 */
+/** 后台权限校验接口。 */
 @RestController
 @RequestMapping("/api/v1/admin")
-@Tag(name = "后台权限", description = "管理员 RBAC 校验")
+@Tag(name = "后台权限", description = "后台角色与功能权限校验")
 public class AdminAccessController {
 
     /**
@@ -25,8 +25,8 @@ public class AdminAccessController {
      * @return 管理员权限校验结果
      */
     @GetMapping("/access-check")
-    @PreAuthorize("hasRole('ADMIN')")
-    @Operation(summary = "校验管理员权限", description = "仅 ADMIN 角色可以访问")
+    @PreAuthorize("hasAuthority('admin.console.access')")
+    @Operation(summary = "校验后台权限", description = "需要 admin.console.access 权限")
     public ApiResponse<AdminAccessResponse> accessCheck(Authentication authentication) {
         if (authentication == null || !(authentication.getPrincipal() instanceof AuthenticatedUser user)) {
             throw new BusinessException(ErrorCode.UNAUTHENTICATED);

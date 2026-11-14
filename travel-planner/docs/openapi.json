@@ -12,8 +12,8 @@
     "name" : "用户",
     "description" : "当前登录用户资料"
   }, {
-    "name" : "后台权限",
-    "description" : "管理员 RBAC 校验"
+    "name" : "RBAC 权限管理",
+    "description" : "超级管理员分配用户角色与角色权限"
   }, {
     "name" : "认证",
     "description" : "账号注册、密码和邮箱验证码登录、令牌刷新与退出"
@@ -21,10 +21,181 @@
     "name" : "人机验证",
     "description" : "自托管图形验证码与一次性验证票据"
   }, {
+    "name" : "后台权限",
+    "description" : "后台角色与功能权限校验"
+  }, {
     "name" : "旅行规划",
     "description" : "将自然语言旅行需求转换为经过规则校验的行程"
   } ],
   "paths" : {
+    "/api/v1/users/me" : {
+      "get" : {
+        "tags" : [ "用户" ],
+        "summary" : "获取当前用户信息",
+        "operationId" : "me",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseUserResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "用户" ],
+        "summary" : "更新当前用户资料",
+        "operationId" : "updateProfile",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ProfileUpdateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/preferences" : {
+      "get" : {
+        "tags" : [ "用户" ],
+        "summary" : "获取当前用户长期偏好",
+        "operationId" : "preferences",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseUserPreferencesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "用户" ],
+        "summary" : "更新当前用户长期偏好",
+        "operationId" : "updatePreferences",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserPreferencesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseUserPreferencesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rbac/users/{userId}/roles" : {
+      "put" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "更新用户角色",
+        "operationId" : "updateUserRoles",
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserRolesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rbac/roles/{roleId}/permissions" : {
+      "put" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "更新角色权限",
+        "operationId" : "updateRolePermissions",
+        "parameters" : [ {
+          "name" : "roleId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RolePermissionsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/trips/plan" : {
       "post" : {
         "tags" : [ "旅行规划" ],
@@ -222,25 +393,6 @@
         }
       }
     },
-    "/api/v1/users/me" : {
-      "get" : {
-        "tags" : [ "用户" ],
-        "summary" : "获取当前用户信息",
-        "operationId" : "me",
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ApiResponseUserResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/health" : {
       "get" : {
         "tags" : [ "health-controller" ],
@@ -277,11 +429,30 @@
         }
       }
     },
+    "/api/v1/admin/rbac/overview" : {
+      "get" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "获取 RBAC 权限分配数据",
+        "operationId" : "overview",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseRbacOverviewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/access-check" : {
       "get" : {
         "tags" : [ "后台权限" ],
-        "summary" : "校验管理员权限",
-        "description" : "仅 ADMIN 角色可以访问",
+        "summary" : "校验后台权限",
+        "description" : "需要 admin.console.access 权限",
         "operationId" : "accessCheck",
         "responses" : {
           "200" : {
@@ -300,6 +471,226 @@
   },
   "components" : {
     "schemas" : {
+      "ProfileUpdateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "nickname" : {
+            "type" : "string",
+            "maxLength" : 50,
+            "minLength" : 0
+          },
+          "phone" : {
+            "type" : "string",
+            "maxLength" : 20,
+            "minLength" : 0
+          },
+          "newUsername" : {
+            "type" : "string",
+            "maxLength" : 32,
+            "minLength" : 4,
+            "pattern" : "^$|^[A-Za-z0-9_]+$"
+          },
+          "newPassword" : {
+            "type" : "string",
+            "maxLength" : 64,
+            "minLength" : 8
+          },
+          "newEmail" : {
+            "type" : "string",
+            "maxLength" : 254,
+            "minLength" : 0
+          },
+          "verificationCode" : {
+            "type" : "string",
+            "maxLength" : 6,
+            "minLength" : 0
+          },
+          "newEmailCode" : {
+            "type" : "string",
+            "maxLength" : 6,
+            "minLength" : 0
+          }
+        }
+      },
+      "ApiResponseUserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/UserResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "UserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "username" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "nickname" : {
+            "type" : "string"
+          },
+          "phone" : {
+            "type" : "string"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "createTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "createTime", "email", "id", "nickname", "permissions", "phone", "role", "roles", "status", "username" ]
+      },
+      "UserPreferencesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "travelStyleDefault" : {
+            "type" : "string",
+            "maxLength" : 50,
+            "minLength" : 0
+          },
+          "foodHabit" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "forbiddenList" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "maxLength" : 50,
+              "minLength" : 0
+            },
+            "maxItems" : 50,
+            "minItems" : 0
+          },
+          "accommodationPreference" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "budgetLevel" : {
+            "type" : "string",
+            "example" : "COMFORT",
+            "pattern" : "^$|ECONOMY|COMFORT|LUXURY"
+          }
+        }
+      },
+      "ApiResponseUserPreferencesResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/UserPreferencesResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "UserPreferencesResponse" : {
+        "type" : "object",
+        "properties" : {
+          "travelStyleDefault" : {
+            "type" : "string"
+          },
+          "foodHabit" : {
+            "type" : "string"
+          },
+          "forbiddenList" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "accommodationPreference" : {
+            "type" : "string"
+          },
+          "budgetLevel" : {
+            "type" : "string"
+          },
+          "updateTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "accommodationPreference", "budgetLevel", "foodHabit", "forbiddenList", "travelStyleDefault" ]
+      },
+      "UserRolesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "roleIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        },
+        "required" : [ "roleIds" ]
+      },
+      "ApiResponseVoid" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : { }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "RolePermissionsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "permissionIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        },
+        "required" : [ "permissionIds" ]
+      },
       "TripPlanRequest" : {
         "type" : "object",
         "properties" : {
@@ -603,20 +994,6 @@
         },
         "required" : [ "refreshToken" ]
       },
-      "ApiResponseVoid" : {
-        "type" : "object",
-        "properties" : {
-          "code" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "message" : {
-            "type" : "string"
-          },
-          "data" : { }
-        },
-        "required" : [ "code", "data", "message" ]
-      },
       "LoginRequest" : {
         "type" : "object",
         "properties" : {
@@ -752,54 +1129,6 @@
         },
         "required" : [ "challengeId", "expiresIn", "imageDataUrl" ]
       },
-      "ApiResponseUserResponse" : {
-        "type" : "object",
-        "properties" : {
-          "code" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "message" : {
-            "type" : "string"
-          },
-          "data" : {
-            "$ref" : "#/components/schemas/UserResponse"
-          }
-        },
-        "required" : [ "code", "data", "message" ]
-      },
-      "UserResponse" : {
-        "type" : "object",
-        "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int64"
-          },
-          "username" : {
-            "type" : "string"
-          },
-          "email" : {
-            "type" : "string"
-          },
-          "nickname" : {
-            "type" : "string"
-          },
-          "phone" : {
-            "type" : "string"
-          },
-          "role" : {
-            "type" : "string"
-          },
-          "status" : {
-            "type" : "string"
-          },
-          "createTime" : {
-            "type" : "string",
-            "format" : "date-time"
-          }
-        },
-        "required" : [ "createTime", "email", "id", "nickname", "phone", "role", "status", "username" ]
-      },
       "ApiResponseHealthResponse" : {
         "type" : "object",
         "properties" : {
@@ -846,6 +1175,148 @@
           }
         },
         "required" : [ "code", "data", "message" ]
+      },
+      "ApiResponseRbacOverviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/RbacOverviewResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "RbacOverviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RbacRoleResponse"
+            }
+          },
+          "permissionGroups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RbacPermissionGroupResponse"
+            }
+          },
+          "users" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RbacUserResponse"
+            }
+          }
+        },
+        "required" : [ "permissionGroups", "roles", "users" ]
+      },
+      "RbacPermissionGroupResponse" : {
+        "type" : "object",
+        "properties" : {
+          "module" : {
+            "type" : "string"
+          },
+          "permissions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RbacPermissionResponse"
+            }
+          }
+        },
+        "required" : [ "module", "permissions" ]
+      },
+      "RbacPermissionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "description", "id", "name" ]
+      },
+      "RbacRoleResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "builtIn" : {
+            "type" : "boolean"
+          },
+          "userCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "permissionIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        },
+        "required" : [ "builtIn", "code", "description", "id", "name", "permissionIds", "userCount" ]
+      },
+      "RbacUserResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "username" : {
+            "type" : "string"
+          },
+          "nickname" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "roleIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          },
+          "roleCodes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        },
+        "required" : [ "email", "id", "nickname", "roleCodes", "roleIds", "status", "username" ]
       },
       "AdminAccessResponse" : {
         "type" : "object",

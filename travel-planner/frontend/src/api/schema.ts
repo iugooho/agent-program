@@ -39,6 +39,12 @@ export interface ApiResponseHealthResponse {
   data: HealthResponse
 }
 
+export interface ApiResponseRbacOverviewResponse {
+  code: number
+  message: string
+  data: RbacOverviewResponse
+}
+
 export interface ApiResponseString {
   code: number
   message: string
@@ -49,6 +55,12 @@ export interface ApiResponseTripPlanResponse {
   code: number
   message: string
   data: TripPlanResponse
+}
+
+export interface ApiResponseUserPreferencesResponse {
+  code: number
+  message: string
+  data: UserPreferencesResponse
 }
 
 export interface ApiResponseUserResponse {
@@ -148,6 +160,54 @@ export interface LoginRequest {
   captchaAnswer?: string
 }
 
+export interface ProfileUpdateRequest {
+  nickname?: string
+  phone?: string
+  newUsername?: string
+  newPassword?: string
+  newEmail?: string
+  verificationCode?: string
+  newEmailCode?: string
+}
+
+export interface RbacOverviewResponse {
+  roles: RbacRoleResponse[]
+  permissionGroups: RbacPermissionGroupResponse[]
+  users: RbacUserResponse[]
+}
+
+export interface RbacPermissionGroupResponse {
+  module: string
+  permissions: RbacPermissionResponse[]
+}
+
+export interface RbacPermissionResponse {
+  id: number
+  code: string
+  name: string
+  description: string
+}
+
+export interface RbacRoleResponse {
+  id: number
+  code: string
+  name: string
+  description: string
+  builtIn: boolean
+  userCount: number
+  permissionIds: number[]
+}
+
+export interface RbacUserResponse {
+  id: number
+  username: string
+  nickname: string
+  email: string
+  status: string
+  roleIds: number[]
+  roleCodes: string[]
+}
+
 export interface RefreshTokenRequest {
   refreshToken: string
 }
@@ -157,6 +217,10 @@ export interface RegisterRequest {
   password: string
   email: string
   emailCode: string
+}
+
+export interface RolePermissionsRequest {
+  permissionIds: number[]
 }
 
 export interface TripPlanRequest {
@@ -183,6 +247,23 @@ export interface TripRequestResponse {
   accommodationPreferences: string[]
 }
 
+export interface UserPreferencesRequest {
+  travelStyleDefault?: string
+  foodHabit?: string
+  forbiddenList?: string[]
+  accommodationPreference?: string
+  budgetLevel?: string
+}
+
+export interface UserPreferencesResponse {
+  travelStyleDefault: string
+  foodHabit: string
+  forbiddenList: string[]
+  accommodationPreference: string
+  budgetLevel: string
+  updateTime?: string
+}
+
 export interface UserResponse {
   id: number
   username: string
@@ -190,6 +271,12 @@ export interface UserResponse {
   nickname: string
   phone: string
   role: string
+  roles: string[]
+  permissions: string[]
   status: string
   createTime: string
+}
+
+export interface UserRolesRequest {
+  roleIds: number[]
 }

@@ -5,6 +5,7 @@ import com.travelagent.travelplanner.itinerary.application.TravelAgentService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +26,7 @@ public class TripController {
 
     /** 同步生成一份旅行计划。 */
     @PostMapping("/plan")
+    @PreAuthorize("hasAuthority('trip.create')")
     @Operation(summary = "生成旅行计划", description = "模型解析需求，工具补充实时事实，Java 校验预算和时间")
     public ApiResponse<TripPlanResponse> plan(@Valid @RequestBody TripPlanRequest request) {
         return ApiResponse.ok(TripPlanResponse.from(travelAgentService.plan(request.message())));
