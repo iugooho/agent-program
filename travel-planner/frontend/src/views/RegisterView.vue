@@ -120,9 +120,9 @@ onUnmounted(() => {
             type="password"
             autocomplete="new-password"
             required
-            minlength="8"
+            minlength="6"
             maxlength="64"
-            placeholder="至少 8 位"
+            placeholder="至少 6 位"
           />
         </label>
 

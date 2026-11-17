@@ -210,6 +210,55 @@ class AuthServiceTest {
         assertEquals(ErrorCode.EMAIL_CODE_TOO_FREQUENT, exception.errorCode());
     }
 
+    @Test
+    @DisplayName("未注册邮箱不生成也不发送登录验证码")
+    void loginCodeForUnknownEmailIsSilentlySkipped() {
+        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+        when(emailCodeStore.tryReserveSend(
+                "missing@example.com",
+                EmailPurpose.LOGIN,
+                Duration.ofSeconds(60))).thenReturn(true);
+
+        EmailCodeDelivery delivery = authService.sendEmailCode(
+                "missing@example.com",
+                "LOGIN",
+                "captcha-challenge",
+                "ABCDE",
+                "client-key");
+
+        assertEquals(300, delivery.expiresIn());
+        assertEquals(60, delivery.retryAfterSeconds());
+        verify(emailCodeStore, never()).saveCode(anyString(), any(EmailPurpose.class), anyString(), any());
+        verify(emailCodeSender, never()).send(anyString(), any(EmailPurpose.class), anyString());
+    }
+
+    @Test
+    @DisplayName("已注册邮箱正常生成并发送登录验证码")
+    void loginCodeForKnownEmailIsSent() {
+        when(userRepository.findByEmail("demo@example.com")).thenReturn(Optional.of(user("ACTIVE")));
+        when(emailCodeStore.tryReserveSend(
+                "demo@example.com",
+                EmailPurpose.LOGIN,
+                Duration.ofSeconds(60))).thenReturn(true);
+
+        authService.sendEmailCode(
+                "demo@example.com",
+                "LOGIN",
+                "captcha-challenge",
+                "ABCDE",
+                "client-key");
+
+        verify(emailCodeStore).saveCode(
+                org.mockito.ArgumentMatchers.eq("demo@example.com"),
+                org.mockito.ArgumentMatchers.eq(EmailPurpose.LOGIN),
+                anyString(),
+                org.mockito.ArgumentMatchers.eq(Duration.ofMinutes(5)));
+        verify(emailCodeSender).send(
+                org.mockito.ArgumentMatchers.eq("demo@example.com"),
+                org.mockito.ArgumentMatchers.eq(EmailPurpose.LOGIN),
+                anyString());
+    }
+
     private UserAccount user(String status) {
         return user(1L, "demo", "demo@example.com", "hash", status);
     }
@@ -225,7 +274,6 @@ class AuthServiceTest {
                 username,
                 email,
                 passwordHash,
-                "USER",
                 status,
                 username,
                 null,

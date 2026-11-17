@@ -1,0 +1,61 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="backend: prod MySQL (edit placeholders)" type="MavenRunConfiguration" factoryName="Maven">
+    <MavenSettings>
+      <option name="myGeneralSettings" />
+      <option name="myRunnerSettings">
+        <MavenRunnerSettings>
+          <option name="delegateBuildToMaven" value="false" />
+          <option name="environmentProperties">
+            <map>
+              <entry key="SPRING_PROFILES_ACTIVE" value="prod" />
+              <entry key="DB_URL" value="jdbc:mysql://127.0.0.1:3306/travel?useUnicode=true&amp;characterEncoding=utf8&amp;serverTimezone=Asia/Shanghai&amp;useSSL=false&amp;allowPublicKeyRetrieval=true&amp;rewriteBatchedStatements=true" />
+              <entry key="DB_USERNAME" value="CHANGE_ME_DB_USERNAME" />
+              <entry key="DB_PASSWORD" value="CHANGE_ME_DB_PASSWORD" />
+              <entry key="APP_JWT_SECRET" value="CHANGE_ME_AT_LEAST_32_BYTES_RANDOM_SECRET" />
+              <entry key="APP_AUTH_REDIS_ENABLED" value="true" />
+              <entry key="APP_REDIS_HOST" value="127.0.0.1" />
+              <entry key="APP_REDIS_PORT" value="6380" />
+              <entry key="APP_REDIS_PASSWORD" value="CHANGE_ME_REDIS_PASSWORD" />
+              <entry key="APP_EMAIL_MODE" value="smtp" />
+              <entry key="APP_EMAIL_USERNAME" value="CHANGE_ME_EMAIL_USERNAME" />
+              <entry key="APP_EMAIL_PASSWORD" value="CHANGE_ME_EMAIL_AUTHORIZATION_CODE" />
+              <entry key="APP_EMAIL_FROM" value="CHANGE_ME_EMAIL_FROM" />
+            </map>
+          </option>
+          <option name="jreName" value="#USE_PROJECT_JDK" />
+          <option name="mavenProperties">
+            <map />
+          </option>
+          <option name="passParentEnv" value="true" />
+          <option name="runMavenInBackground" value="true" />
+          <option name="skipTests" value="false" />
+          <option name="vmOptions" value="" />
+        </MavenRunnerSettings>
+      </option>
+      <option name="myRunnerParameters">
+        <MavenRunnerParameters>
+          <option name="cmdOptions" />
+          <option name="profiles">
+            <set />
+          </option>
+          <option name="goals">
+            <list>
+              <option value="spring-boot:run" />
+            </list>
+          </option>
+          <option name="multimoduleDir" />
+          <option name="pomFileName" value="pom.xml" />
+          <option name="profilesMap">
+            <map />
+          </option>
+          <option name="projectsCmdOptionValues">
+            <list />
+          </option>
+          <option name="resolveToWorkspace" value="false" />
+          <option name="workingDirPath" value="$PROJECT_DIR$/travel-planner/backend" />
+        </MavenRunnerParameters>
+      </option>
+    </MavenSettings>
+    <method v="2" />
+  </configuration>
+</component>

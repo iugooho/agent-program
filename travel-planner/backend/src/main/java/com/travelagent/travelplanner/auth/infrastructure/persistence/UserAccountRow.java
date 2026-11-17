@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
  * @param username 登录账号
  * @param email 登录邮箱
  * @param passwordHash 密码哈希
- * @param role 角色
  * @param status 状态
  * @param nickname 昵称
  * @param phone 联系电话
@@ -21,7 +20,6 @@ public record UserAccountRow(
         String username,
         String email,
         String passwordHash,
-        String role,
         String status,
         String nickname,
         String phone,

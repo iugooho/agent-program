@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Size;
  * 用户注册请求。
  *
  * @param username 4-32 位字母、数字或下划线
- * @param password 8-64 位明文密码
+ * @param password 6-64 位明文密码
  * @param email 绑定邮箱
  * @param emailCode REGISTER 用途邮箱验证码
  */
@@ -24,10 +24,10 @@ public record RegisterRequest(
                 example = "traveler_01")
         String username,
         @NotBlank
-        @Size(min = 8, max = 64)
+        @Size(min = 6, max = 64)
         @Schema(
                 requiredMode = Schema.RequiredMode.REQUIRED,
-                description = "8-64 位密码，服务端使用 BCrypt 保存",
+                description = "6-64 位密码，服务端使用 BCrypt 保存",
                 format = "password")
         String password,
         @NotBlank

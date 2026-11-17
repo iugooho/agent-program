@@ -3,14 +3,20 @@ package com.travelagent.travelplanner.rbac.api;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.travelagent.travelplanner.common.error.ErrorCode;
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -111,6 +117,124 @@ class RbacAdminControllerTest {
                 .andExpect(jsonPath("$.message").value("超级管理员权限固定为全部权限"));
     }
 
+    @Test
+    @DisplayName("自定义角色支持创建、编辑、停用和删除")
+    void customRoleLifecycle() throws Exception {
+        Overview overview = overview();
+        long tripReadPermissionId = overview.permissionId("trip.read");
+        String code = "CUSTOM_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8)
+                .toUpperCase();
+
+        MvcResult createResult = mockMvc.perform(post("/api/v1/admin/rbac/roles")
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "code", code,
+                                "name", "自定义角色",
+                                "description", "生命周期测试",
+                                "permissionIds", List.of(tripReadPermissionId)))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("ACTIVE"))
+                .andReturn();
+        JsonNode created = objectMapper.readTree(createResult.getResponse().getContentAsString())
+                .path("data");
+        long roleId = created.path("id").asLong();
+        assertEquals(code, created.path("code").asText());
+
+        mockMvc.perform(put("/api/v1/admin/rbac/roles/{roleId}", roleId)
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "name", "已编辑角色",
+                                "description", "编辑成功"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.name").value("已编辑角色"));
+
+        mockMvc.perform(put("/api/v1/admin/rbac/roles/{roleId}/status", roleId)
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"DISABLED\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.status").value("DISABLED"));
+
+        mockMvc.perform(delete("/api/v1/admin/rbac/roles/{roleId}", roleId)
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        assertFalse(overview().containsRole(roleId), "删除后的角色不应再出现在配置列表");
+    }
+
+    @Test
+    @DisplayName("停用角色后用户权限立即失效")
+    void disabledRoleLosesEffectivePermissions() throws Exception {
+        Overview overview = overview();
+        long tripReadPermissionId = overview.permissionId("trip.read");
+        long demoUserId = overview.userId("demo");
+        long userRoleId = overview.roleId("USER");
+        String code = "PAUSED_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8)
+                .toUpperCase();
+        MvcResult createResult = mockMvc.perform(post("/api/v1/admin/rbac/roles")
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "code", code,
+                                "name", "待停用角色",
+                                "description", "验证即时失效",
+                                "permissionIds", List.of(tripReadPermissionId)))))
+                .andExpect(status().isOk())
+                .andReturn();
+        long roleId = objectMapper.readTree(createResult.getResponse().getContentAsString())
+                .path("data").path("id").asLong();
+
+        mockMvc.perform(put("/api/v1/admin/rbac/users/{userId}/roles", demoUserId)
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "roleIds", List.of(userRoleId, roleId)))))
+                .andExpect(status().isOk());
+        String demoBearer = loginBearer("demo", "Demo123456");
+        assertTrue(roleCodes(demoBearer).contains(code), "停用前角色应生效");
+
+        mockMvc.perform(put("/api/v1/admin/rbac/roles/{roleId}/status", roleId)
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"DISABLED\"}"))
+                .andExpect(status().isOk());
+
+        assertFalse(roleCodes(demoBearer).contains(code), "停用后角色应立即失效");
+    }
+
+    @Test
+    @DisplayName("内置角色禁止停用和删除")
+    void builtInRolesAreProtected() throws Exception {
+        Overview overview = overview();
+        long userRoleId = overview.roleId("USER");
+
+        mockMvc.perform(put("/api/v1/admin/rbac/roles/{roleId}/status", userRoleId)
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"status\":\"DISABLED\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.ROLE_PROTECTED.code()));
+
+        mockMvc.perform(delete("/api/v1/admin/rbac/roles/{roleId}", userRoleId)
+                        .header(HttpHeaders.AUTHORIZATION, adminBearer()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.ROLE_PROTECTED.code()));
+    }
+
+    private List<String> roleCodes(String bearer) throws Exception {
+        MvcResult result = mockMvc.perform(get("/api/v1/users/me")
+                        .header(HttpHeaders.AUTHORIZATION, bearer))
+                .andExpect(status().isOk())
+                .andReturn();
+        List<String> roles = new ArrayList<>();
+        objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data").path("roles").forEach(role -> roles.add(role.asText()));
+        return roles;
+    }
+
     private Overview overview() throws Exception {
         MvcResult result = mockMvc.perform(get("/api/v1/admin/rbac/overview")
                         .header(HttpHeaders.AUTHORIZATION, adminBearer()))
@@ -158,6 +282,26 @@ class RbacAdminControllerTest {
                 }
             }
             throw new IllegalArgumentException("用户不存在: " + username);
+        }
+
+        long permissionId(String code) {
+            for (JsonNode group : data.path("permissionGroups")) {
+                for (JsonNode permission : group.path("permissions")) {
+                    if (code.equals(permission.path("code").asText())) {
+                        return permission.path("id").asLong();
+                    }
+                }
+            }
+            throw new IllegalArgumentException("权限不存在: " + code);
+        }
+
+        boolean containsRole(long roleId) {
+            for (JsonNode role : data.path("roles")) {
+                if (role.path("id").asLong() == roleId) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

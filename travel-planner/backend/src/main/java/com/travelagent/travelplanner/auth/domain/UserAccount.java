@@ -9,7 +9,6 @@ import java.time.LocalDateTime;
  * @param username 独立登录账号
  * @param email 登录邮箱
  * @param passwordHash BCrypt 密码哈希
- * @param role USER 或 ADMIN
  * @param status ACTIVE、DISABLED 或 DELETED
  * @param nickname 昵称
  * @param phone 联系电话
@@ -21,7 +20,6 @@ public record UserAccount(
         String username,
         String email,
         String passwordHash,
-        String role,
         String status,
         String nickname,
         String phone,

@@ -7,6 +7,8 @@ import com.travelagent.travelplanner.rbac.api.RbacPermissionGroupResponse;
 import com.travelagent.travelplanner.rbac.api.RbacPermissionResponse;
 import com.travelagent.travelplanner.rbac.api.RbacRoleResponse;
 import com.travelagent.travelplanner.rbac.api.RbacUserResponse;
+import com.travelagent.travelplanner.rbac.api.RoleCreateRequest;
+import com.travelagent.travelplanner.rbac.api.RoleUpdateRequest;
 import com.travelagent.travelplanner.rbac.domain.RbacPermission;
 import com.travelagent.travelplanner.rbac.domain.RbacRepository;
 import com.travelagent.travelplanner.rbac.domain.RbacRole;
@@ -16,9 +18,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,6 +56,82 @@ public class RbacService {
     }
 
     /**
+     * 创建自定义角色。
+     *
+     * @param request 创建请求
+     * @return 创建的角色
+     */
+    @Transactional
+    public RbacRoleResponse createRole(RoleCreateRequest request) {
+        String code = request.code().strip().toUpperCase(Locale.ROOT);
+        if (repository.findRoleByCode(code).isPresent()) {
+            throw new BusinessException(ErrorCode.ROLE_CODE_EXISTS);
+        }
+        RbacRole role;
+        try {
+            role = repository.createRole(
+                    code,
+                    request.name().strip(),
+                    nullIfBlank(request.description()));
+        } catch (DuplicateKeyException exception) {
+            throw new BusinessException(ErrorCode.ROLE_CODE_EXISTS);
+        }
+        Set<Long> permissionIds = normalize(request.permissionIds());
+        validatePermissionIds(repository.loadSnapshot(), permissionIds);
+        repository.replaceRolePermissions(role.id(), List.copyOf(permissionIds));
+        log.info("RBAC role created role={} permissions={}", code, permissionIds);
+        return roleResponse(repository.loadSnapshot(), role.id());
+    }
+
+    /**
+     * 更新自定义角色名称和说明。
+     *
+     * @param roleId 角色主键
+     * @param request 更新请求
+     * @return 更新后的角色
+     */
+    @Transactional
+    public RbacRoleResponse updateRole(long roleId, RoleUpdateRequest request) {
+        RbacRole role = requireMutableRole(roleId);
+        repository.updateRole(
+                role.id(),
+                request.name().strip(),
+                nullIfBlank(request.description()));
+        log.info("RBAC role updated role={}", role.code());
+        return roleResponse(repository.loadSnapshot(), role.id());
+    }
+
+    /**
+     * 启用或停用自定义角色。
+     *
+     * @param roleId 角色主键
+     * @param status ACTIVE 或 DISABLED
+     * @return 更新后的角色
+     */
+    @Transactional
+    public RbacRoleResponse updateRoleStatus(long roleId, String status) {
+        RbacRole role = requireMutableRole(roleId);
+        if (!"ACTIVE".equals(status) && !"DISABLED".equals(status)) {
+            throw new BusinessException(ErrorCode.ROLE_STATE_INVALID);
+        }
+        repository.updateRoleStatus(role.id(), status);
+        log.info("RBAC role status updated role={} status={}", role.code(), status);
+        return roleResponse(repository.loadSnapshot(), role.id());
+    }
+
+    /**
+     * 软删除自定义角色并清理授权关系。
+     *
+     * @param roleId 角色主键
+     */
+    @Transactional
+    public void deleteRole(long roleId) {
+        RbacRole role = requireMutableRole(roleId);
+        repository.deleteRole(role.id());
+        log.info("RBAC role deleted role={}", role.code());
+    }
+
+    /**
      * 更新角色权限。
      *
      * @param roleId 角色主键
@@ -65,20 +145,7 @@ public class RbacService {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员权限固定为全部权限");
         }
         Set<Long> normalizedIds = normalize(permissionIds);
-        Set<Long> availablePermissionIds = snapshot.permissions().stream()
-                .map(RbacPermission::id)
-                .collect(Collectors.toSet());
-        if (!availablePermissionIds.containsAll(normalizedIds)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "包含不存在的权限");
-        }
-        Long rbacManageId = snapshot.permissions().stream()
-                .filter(permission -> PERMISSION_RBAC_MANAGE.equals(permission.code()))
-                .map(RbacPermission::id)
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException("缺少权限管理权限点"));
-        if (normalizedIds.contains(rbacManageId)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "权限管理只能由超级管理员角色拥有");
-        }
+        validatePermissionIds(snapshot, normalizedIds);
         repository.replaceRolePermissions(roleId, List.copyOf(normalizedIds));
         log.info("RBAC role permission updated role={} permissions={}", role.code(), normalizedIds);
     }
@@ -131,6 +198,7 @@ public class RbacService {
                         role.name(),
                         role.description(),
                         role.builtIn(),
+                        role.status(),
                         userCounts.getOrDefault(role.id(), 0),
                         snapshot.rolePermissionIds().getOrDefault(role.id(), List.of())))
                 .toList();
@@ -190,6 +258,53 @@ public class RbacService {
     }
 
     private Set<Long> normalize(List<Long> ids) {
-        return new LinkedHashSet<>(ids);
+        return ids == null ? Set.of() : new LinkedHashSet<>(ids);
+    }
+
+    private void validatePermissionIds(RbacSnapshot snapshot, Set<Long> permissionIds) {
+        Set<Long> availablePermissionIds = snapshot.permissions().stream()
+                .map(RbacPermission::id)
+                .collect(Collectors.toSet());
+        if (!availablePermissionIds.containsAll(permissionIds)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "包含不存在的权限");
+        }
+        Long rbacManageId = snapshot.permissions().stream()
+                .filter(permission -> PERMISSION_RBAC_MANAGE.equals(permission.code()))
+                .map(RbacPermission::id)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("缺少权限管理权限点"));
+        if (permissionIds.contains(rbacManageId)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "权限管理只能由超级管理员角色拥有");
+        }
+    }
+
+    private RbacRole requireMutableRole(long roleId) {
+        RbacRole role = repository.findRoleById(roleId)
+                .filter(candidate -> !"DELETED".equals(candidate.status()))
+                .orElseThrow(() -> new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "角色不存在"));
+        if (role.builtIn()) {
+            throw new BusinessException(ErrorCode.ROLE_PROTECTED);
+        }
+        return role;
+    }
+
+    private RbacRoleResponse roleResponse(RbacSnapshot snapshot, long roleId) {
+        RbacRole role = findRole(snapshot.roles(), roleId);
+        int userCount = snapshot.userRoleIds().values().stream()
+                .mapToInt(roleIds -> roleIds.contains(roleId) ? 1 : 0)
+                .sum();
+        return new RbacRoleResponse(
+                role.id(),
+                role.code(),
+                role.name(),
+                role.description(),
+                role.builtIn(),
+                role.status(),
+                userCount,
+                snapshot.rolePermissionIds().getOrDefault(roleId, List.of()));
+    }
+
+    private String nullIfBlank(String value) {
+        return value == null || value.isBlank() ? null : value.strip();
     }
 }

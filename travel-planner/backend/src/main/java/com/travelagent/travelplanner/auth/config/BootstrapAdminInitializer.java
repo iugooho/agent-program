@@ -34,11 +34,17 @@ public class BootstrapAdminInitializer implements ApplicationRunner {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             @Value("${app.bootstrap-admin.username:admin}") String username,
-            @Value("${app.bootstrap-admin.password:Admin123456}") String password,
+            @Value("${app.bootstrap-admin.password:}") String password,
             @Value("${app.bootstrap-admin.email:admin@example.com}") String email,
             @Value("${app.bootstrap-admin.nickname:Docker 管理员}") String nickname) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        if (password == null
+                || password.isBlank()
+                || password.startsWith("CHANGE_ME_")) {
+            throw new IllegalStateException(
+                    "app.bootstrap-admin.enabled=true 时必须配置真实的 APP_BOOTSTRAP_ADMIN_PASSWORD");
+        }
         this.username = username;
         this.password = password;
         this.email = email;

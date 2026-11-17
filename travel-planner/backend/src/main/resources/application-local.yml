@@ -18,6 +18,10 @@ app:
       enabled: ${APP_AUTH_REDIS_ENABLED:true}
       port: ${APP_REDIS_PORT:6380}
     jwt:
-      secret: ${APP_JWT_SECRET:local-development-jwt-secret-change-me-123456}
+      secret: ${APP_JWT_SECRET:}
     email:
       mode: ${APP_EMAIL_MODE:local}
+  dev-user:
+    password: ${APP_DEV_USER_PASSWORD:}
+  dev-admin:
+    password: ${APP_DEV_ADMIN_PASSWORD:}

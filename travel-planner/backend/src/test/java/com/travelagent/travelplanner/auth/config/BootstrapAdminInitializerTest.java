@@ -1,5 +1,6 @@
 package com.travelagent.travelplanner.auth.config;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -57,13 +58,24 @@ class BootstrapAdminInitializerTest {
                 "admin", "admin@example.com", "encoded", "Docker 管理员");
     }
 
+    @Test
+    @DisplayName("启用初始化器时管理员密码不能为空")
+    void rejectsBlankAdminPassword() {
+        assertThrows(IllegalStateException.class, () -> new BootstrapAdminInitializer(
+                mock(UserRepository.class),
+                mock(PasswordEncoder.class),
+                "admin",
+                "",
+                "admin@example.com",
+                "Docker 管理员"));
+    }
+
     private UserAccount admin() {
         return new UserAccount(
                 1L,
                 "admin",
                 "admin@example.com",
                 "encoded",
-                "ADMIN",
                 "ACTIVE",
                 "Docker 管理员",
                 null,

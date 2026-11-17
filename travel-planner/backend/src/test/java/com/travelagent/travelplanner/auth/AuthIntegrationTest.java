@@ -135,6 +135,27 @@ class AuthIntegrationTest {
     }
 
     @Test
+    @DisplayName("未注册邮箱返回统一结果但不实际发送登录验证码")
+    void loginCodeForUnknownEmailIsNotDelivered() throws Exception {
+        String email = "missing_" + UUID.randomUUID().toString().replace("-", "").substring(0, 8)
+                + "@example.com";
+        CaptchaCredentials captcha = requestCaptcha("EMAIL_CODE");
+        mockMvc.perform(post("/api/v1/auth/email-code")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(java.util.Map.of(
+                                "email", email,
+                                "purpose", "LOGIN",
+                                "captchaChallengeId", captcha.challengeId(),
+                                "captchaAnswer", captcha.answer()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        boolean delivered = Files.readAllLines(Path.of("target", "local-email-outbox.log")).stream()
+                .anyMatch(line -> line.contains("| LOGIN | " + email + " |"));
+        org.junit.jupiter.api.Assertions.assertFalse(delivered, "未注册邮箱不应收到验证码");
+    }
+
+    @Test
     @DisplayName("邮箱验证码完成注册后可直接查询资料并使用密码登录")
     void registerThenLoginWithPassword() throws Exception {
         String username = "reg_" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
@@ -145,7 +166,7 @@ class AuthIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(java.util.Map.of(
                                 "username", username,
-                                "password", "Password123",
+                                "password", "Pass12",
                                 "email", email,
                                 "emailCode", code))))
                 .andExpect(status().isOk())
@@ -166,7 +187,7 @@ class AuthIntegrationTest {
         mockMvc.perform(post("/api/v1/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"loginType":"PASSWORD","username":"%s","password":"Password123"}
+                                {"loginType":"PASSWORD","username":"%s","password":"Pass12"}
                                 """.formatted(username)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.accessToken").isNotEmpty());

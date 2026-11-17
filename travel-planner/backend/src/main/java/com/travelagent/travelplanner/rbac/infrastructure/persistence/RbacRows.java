@@ -14,8 +14,15 @@ public final class RbacRows {
      * @param name 角色名称
      * @param description 角色说明
      * @param builtIn 是否内置
+ * @param status 角色状态
      */
-    public record RoleRow(long id, String code, String name, String description, boolean builtIn) {
+    public record RoleRow(
+            long id,
+            String code,
+            String name,
+            String description,
+            boolean builtIn,
+            String status) {
     }
 
     /**

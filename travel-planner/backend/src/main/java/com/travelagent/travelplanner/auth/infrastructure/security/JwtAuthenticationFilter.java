@@ -70,7 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
             EffectiveAuthorization authorization =
                     rbacRepository.findEffectiveAuthorization(claims.userId());
-            String primaryRole = primaryRole(authorization.roles(), claims.role());
+            String primaryRole = primaryRole(authorization.roles());
             AuthenticatedUser principal = new AuthenticatedUser(
                     claims.userId(),
                     claims.username(),
@@ -101,7 +101,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return List.copyOf(authorities);
     }
 
-    private String primaryRole(List<String> roles, String fallbackRole) {
+    private String primaryRole(List<String> roles) {
         if (roles.contains("SUPER_ADMIN")) {
             return "SUPER_ADMIN";
         }
@@ -111,6 +111,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (roles.contains("USER")) {
             return "USER";
         }
-        return fallbackRole;
+        return roles.isEmpty() ? "UNASSIGNED" : roles.getFirst();
     }
 }

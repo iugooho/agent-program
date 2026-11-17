@@ -101,7 +101,7 @@ async function sendCode(): Promise<void> {
   sendingCode.value = true
   try {
     const result = await auth.sendLoginCodeWithCaptcha(form.email, captcha)
-    successMessage.value = `验证码已发送，${result.expiresIn / 60} 分钟内有效`
+    successMessage.value = '如果该邮箱已注册，验证码将发送，请注意查收'
     startCountdown(result.retryAfterSeconds)
     emailCaptcha.value = null
     emailCaptchaKey.value += 1
@@ -233,9 +233,10 @@ onUnmounted(() => {
       </form>
 
       <p v-if="isDevelopment && mode === 'PASSWORD'" class="hint">
-        本地普通用户：<code>demo</code> / <code>Demo123456</code>
+        本地演示账号：普通用户 <code>demo</code>，管理员 <code>admin</code>
         <br />
-        本地管理员：<code>admin</code> / <code>Admin123456</code>
+        密码见本机 <code>APP_DEV_USER_PASSWORD</code> 和
+        <code>APP_DEV_ADMIN_PASSWORD</code>
       </p>
       <p class="hint">
         还没有账号？

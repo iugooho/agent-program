@@ -1,7 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 
-import { fetchRbacOverview, RbacApiError, updateRolePermissions, updateUserRoles } from '@/api/rbac'
+import {
+  createRole as createRoleRequest,
+  deleteRole as deleteRoleRequest,
+  fetchRbacOverview,
+  RbacApiError,
+  updateRole as updateRoleRequest,
+  updateRolePermissions,
+  updateRoleStatus as updateRoleStatusRequest,
+  updateUserRoles
+} from '@/api/rbac'
 import type {
   RbacOverviewResponse,
   RbacPermissionResponse,
@@ -20,6 +29,15 @@ const message = ref('')
 const errorMessage = ref('')
 const roleSearch = ref('')
 const userSearch = ref('')
+const roleDialogMode = ref<'create' | 'edit' | null>(null)
+const savingRoleDefinition = ref(false)
+const roleDefinitionError = ref('')
+
+const roleDefinitionForm = reactive({
+  code: '',
+  name: '',
+  description: ''
+})
 
 const selectedRole = computed(
   () => overview.value?.roles.find((role) => role.id === selectedRoleId.value) ?? null
@@ -77,6 +95,10 @@ const adminUserCount = computed(
     overview.value?.users.filter((user) =>
       user.roleCodes.some((code) => code === 'ADMIN' || code === 'SUPER_ADMIN')
     ).length ?? 0
+)
+
+const canEditSelectedRole = computed(
+  () => selectedRole.value !== null && !selectedRole.value.builtIn
 )
 
 onMounted(() => {
@@ -209,6 +231,121 @@ async function saveUserRoles(): Promise<void> {
   }
 }
 
+function openCreateRole(): void {
+  roleDialogMode.value = 'create'
+  roleDefinitionError.value = ''
+  roleDefinitionForm.code = ''
+  roleDefinitionForm.name = ''
+  roleDefinitionForm.description = ''
+}
+
+function openEditRole(): void {
+  if (!selectedRole.value || selectedRole.value.builtIn) {
+    return
+  }
+  roleDialogMode.value = 'edit'
+  roleDefinitionError.value = ''
+  roleDefinitionForm.code = selectedRole.value.code
+  roleDefinitionForm.name = selectedRole.value.name
+  roleDefinitionForm.description = selectedRole.value.description
+}
+
+function closeRoleDialog(): void {
+  if (savingRoleDefinition.value) {
+    return
+  }
+  roleDialogMode.value = null
+  roleDefinitionError.value = ''
+}
+
+async function saveRoleDefinition(): Promise<void> {
+  roleDefinitionError.value = ''
+  savingRoleDefinition.value = true
+  const creating = roleDialogMode.value === 'create'
+  try {
+    let roleId = selectedRoleId.value
+    if (creating) {
+      const created = await createRoleRequest({
+        code: roleDefinitionForm.code.trim().toUpperCase(),
+        name: roleDefinitionForm.name.trim(),
+        description: roleDefinitionForm.description.trim(),
+        permissionIds: []
+      })
+      roleId = created.id
+    } else if (roleId !== null) {
+      await updateRoleRequest(roleId, {
+        name: roleDefinitionForm.name.trim(),
+        description: roleDefinitionForm.description.trim()
+      })
+    }
+    roleDialogMode.value = null
+    await loadOverview()
+    const target = overview.value?.roles.find((role) => role.id === roleId)
+    if (target) {
+      selectRole(target)
+    }
+    message.value = creating ? '角色已创建' : '角色信息已更新'
+  } catch (error: unknown) {
+    roleDefinitionError.value = error instanceof Error ? error.message : '角色保存失败'
+  } finally {
+    savingRoleDefinition.value = false
+  }
+}
+
+async function toggleSelectedRoleStatus(): Promise<void> {
+  if (!selectedRole.value || selectedRole.value.builtIn) {
+    return
+  }
+  const nextStatus = selectedRole.value.status === 'ACTIVE' ? 'DISABLED' : 'ACTIVE'
+  if (
+    nextStatus === 'DISABLED' &&
+    !window.confirm(`停用“${selectedRole.value.name}”后，其权限将立即失效。继续吗？`)
+  ) {
+    return
+  }
+  saving.value = 'role-status'
+  clearMessages()
+  try {
+    const roleId = selectedRole.value.id
+    await updateRoleStatusRequest(roleId, nextStatus)
+    await loadOverview()
+    const target = overview.value?.roles.find((role) => role.id === roleId)
+    if (target) {
+      selectRole(target)
+    }
+    message.value = nextStatus === 'ACTIVE' ? '角色已启用' : '角色已停用'
+  } catch (error: unknown) {
+    errorMessage.value = error instanceof Error ? error.message : '角色状态更新失败'
+  } finally {
+    saving.value = ''
+  }
+}
+
+async function removeSelectedRole(): Promise<void> {
+  if (!selectedRole.value || selectedRole.value.builtIn) {
+    return
+  }
+  if (
+    !window.confirm(
+      `删除“${selectedRole.value.name}”会同时移除其权限和用户关联。此操作不能恢复，继续吗？`
+    )
+  ) {
+    return
+  }
+  saving.value = 'role-delete'
+  clearMessages()
+  try {
+    await deleteRoleRequest(selectedRole.value.id)
+    selectedRoleId.value = null
+    await loadOverview()
+    message.value = '角色已删除'
+  } catch (error: unknown) {
+    errorMessage.value = error instanceof Error ? error.message : '角色删除失败'
+  } finally {
+    saving.value = ''
+  }
+}
+
 function permissionDisabled(permission: RbacPermissionResponse): boolean {
   return isSuperAdminRole.value || permission.code === 'admin.rbac.manage'
 }
@@ -287,7 +424,10 @@ function sameIds(left: number[], right: number[]): boolean {
             <span>角色目录</span>
             <h2>选择角色</h2>
           </div>
-          <b>{{ filteredRoles.length }}</b>
+          <div class="panel-title-actions">
+            <b>{{ filteredRoles.length }}</b>
+            <button type="button" class="create-role-button" @click="openCreateRole">+ 新建</button>
+          </div>
         </div>
         <div class="panel-search">
           <input v-model="roleSearch" type="search" placeholder="搜索角色名称或编码" />
@@ -298,7 +438,11 @@ function sameIds(left: number[], right: number[]): boolean {
             :key="role.id"
             type="button"
             class="role-card"
-            :class="{ selected: role.id === selectedRoleId, super: role.code === 'SUPER_ADMIN' }"
+            :class="{
+              selected: role.id === selectedRoleId,
+              super: role.code === 'SUPER_ADMIN',
+              disabled: role.status === 'DISABLED'
+            }"
             @click="selectRole(role)"
           >
             <span class="role-card-top">
@@ -307,7 +451,9 @@ function sameIds(left: number[], right: number[]): boolean {
                 <strong>{{ role.name }}</strong>
                 <code>{{ role.code }}</code>
               </span>
-              <i v-if="role.id === selectedRoleId" />
+              <span class="role-state" :class="role.status.toLowerCase()">
+                {{ role.status === 'ACTIVE' ? '启用' : '停用' }}
+              </span>
             </span>
             <small>{{ role.description }}</small>
             <span class="role-meta">
@@ -328,6 +474,38 @@ function sameIds(left: number[], right: number[]): boolean {
             <strong>{{ selectedPermissionCount }}</strong>
             <span>/ {{ allPermissions.length }}</span>
           </div>
+        </div>
+
+        <div
+          v-if="selectedRole"
+          class="role-lifecycle-bar"
+          :class="{ protected: !canEditSelectedRole }"
+        >
+          <span>
+            {{
+              canEditSelectedRole
+                ? '自定义角色管理'
+                : '内置角色受保护，如需完整生命周期管理请先新建自定义角色'
+            }}
+          </span>
+          <button type="button" :disabled="!canEditSelectedRole" @click="openEditRole">
+            编辑资料
+          </button>
+          <button
+            type="button"
+            :disabled="!canEditSelectedRole || saving === 'role-status'"
+            @click="toggleSelectedRoleStatus"
+          >
+            {{ selectedRole?.status === 'ACTIVE' ? '停用角色' : '启用角色' }}
+          </button>
+          <button
+            type="button"
+            class="danger"
+            :disabled="!canEditSelectedRole || saving === 'role-delete'"
+            @click="removeSelectedRole"
+          >
+            删除角色
+          </button>
         </div>
 
         <div v-if="selectedRole" class="permission-groups">
@@ -443,12 +621,13 @@ function sameIds(left: number[], right: number[]): boolean {
             <input
               type="checkbox"
               :checked="draftRoleIds.includes(role.id)"
+              :disabled="role.status !== 'ACTIVE' && !draftRoleIds.includes(role.id)"
               @change="toggleRole(role, $event)"
             />
             <span class="check-box" :class="{ checked: draftRoleIds.includes(role.id) }">✓</span>
             <span>
               <strong>{{ role.name }}</strong>
-              <code>{{ role.code }}</code>
+              <code>{{ role.code }} · {{ role.status === 'ACTIVE' ? '启用' : '停用' }}</code>
             </span>
           </label>
           <button
@@ -461,6 +640,69 @@ function sameIds(left: number[], right: number[]): boolean {
           </button>
         </section>
       </aside>
+    </div>
+
+    <div
+      v-if="roleDialogMode"
+      class="dialog-backdrop"
+      role="presentation"
+      @click.self="closeRoleDialog"
+    >
+      <form class="role-dialog" @submit.prevent="saveRoleDefinition">
+        <header>
+          <div>
+            <span>ROLE DEFINITION</span>
+            <h2>{{ roleDialogMode === 'create' ? '新建自定义角色' : '编辑角色资料' }}</h2>
+          </div>
+          <button type="button" @click="closeRoleDialog">×</button>
+        </header>
+        <label>
+          角色编码
+          <input
+            v-model.trim="roleDefinitionForm.code"
+            :disabled="roleDialogMode === 'edit'"
+            required
+            minlength="2"
+            maxlength="50"
+            pattern="[A-Z][A-Z0-9_]*"
+            placeholder="例如 OPERATOR"
+          />
+        </label>
+        <label>
+          角色名称
+          <input
+            v-model.trim="roleDefinitionForm.name"
+            required
+            maxlength="100"
+            placeholder="例如 运营人员"
+          />
+        </label>
+        <label>
+          角色说明
+          <textarea
+            v-model.trim="roleDefinitionForm.description"
+            rows="3"
+            maxlength="500"
+            placeholder="说明该角色的职责范围"
+          />
+        </label>
+        <p v-if="roleDialogMode === 'create'" class="dialog-note">
+          创建后默认没有权限，可继续在中间权限矩阵中配置。
+        </p>
+        <p v-if="roleDefinitionError" class="dialog-error">{{ roleDefinitionError }}</p>
+        <footer>
+          <button type="button" class="secondary" @click="closeRoleDialog">取消</button>
+          <button class="primary-action" type="submit" :disabled="savingRoleDefinition">
+            {{
+              savingRoleDefinition
+                ? '保存中…'
+                : roleDialogMode === 'create'
+                  ? '创建角色'
+                  : '保存修改'
+            }}
+          </button>
+        </footer>
+      </form>
     </div>
   </section>
 </template>
@@ -814,6 +1056,246 @@ button:disabled {
   .user-panel {
     grid-column: auto;
   }
+}
+</style>
+
+<style scoped>
+.panel-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.create-role-button {
+  min-height: 27px;
+  padding: 0 9px;
+  border: 1px solid #b9c9e7;
+  border-radius: 5px;
+  background: #f4f8ff;
+  color: #295dac;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.create-role-button:hover {
+  border-color: #6f96df;
+  background: #eaf2ff;
+}
+
+.role-card-top {
+  grid-template-columns: 29px minmax(0, 1fr) auto;
+}
+
+.role-state {
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.role-state.active {
+  background: #e8f6ed;
+  color: #247447;
+}
+
+.role-state.disabled {
+  background: #f1f3f5;
+  color: #7b8491;
+}
+
+.role-card.disabled {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.role-card.disabled.selected {
+  opacity: 1;
+}
+
+.role-lifecycle-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-bottom: 1px solid #e7ebf0;
+  background: #f7f9fc;
+}
+
+.role-lifecycle-bar > span {
+  margin-right: auto;
+  color: #7d8796;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.role-lifecycle-bar.protected {
+  background: #fffaf1;
+}
+
+.role-lifecycle-bar.protected > span {
+  color: #9a6a21;
+}
+
+.role-lifecycle-bar button {
+  min-height: 27px;
+  padding: 0 9px;
+  border: 1px solid #d8dee8;
+  border-radius: 5px;
+  background: #fff;
+  color: #526077;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.role-lifecycle-bar button:hover {
+  border-color: #9eb4d8;
+  color: #285ba9;
+}
+
+.role-lifecycle-bar button.danger {
+  border-color: #edc7cb;
+  color: #a13a43;
+}
+
+.role-lifecycle-bar button:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(15 23 42 / 34%);
+  backdrop-filter: blur(3px);
+}
+
+.role-dialog {
+  display: grid;
+  gap: 14px;
+  width: min(460px, calc(100vw - 40px));
+  padding: 22px;
+  border: 1px solid #dfe4eb;
+  border-radius: 11px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgb(15 23 42 / 24%);
+}
+
+.role-dialog > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.role-dialog > header span {
+  color: #8d96a4;
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.role-dialog h2 {
+  margin: 4px 0 0;
+  color: #263148;
+  font-size: 17px;
+}
+
+.role-dialog > header button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 5px;
+  background: #f1f3f6;
+  color: #6f7886;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.role-dialog > label {
+  display: grid;
+  gap: 7px;
+  color: #4e596a;
+  font-size: 9px;
+  font-weight: 650;
+}
+
+.role-dialog input,
+.role-dialog textarea {
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid #d8dee6;
+  border-radius: 6px;
+  outline: none;
+  color: #2e394d;
+  font-size: 11px;
+}
+
+.role-dialog input:focus,
+.role-dialog textarea:focus {
+  border-color: #789ce0;
+  box-shadow: 0 0 0 2px rgb(36 89 198 / 7%);
+}
+
+.role-dialog input:disabled {
+  background: #f2f4f7;
+  color: #8a93a0;
+}
+
+.role-dialog textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.dialog-note,
+.dialog-error {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.dialog-note {
+  background: #f5f7fa;
+  color: #75808f;
+}
+
+.dialog-error {
+  border: 1px solid #f0c3c8;
+  background: #fff6f7;
+  color: #a1323d;
+}
+
+.role-dialog > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.role-dialog > footer button {
+  min-height: 32px;
+  padding: 0 13px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.role-dialog > footer .secondary {
+  border: 1px solid #d9dfe7;
+  background: #fff;
+  color: #667181;
+}
+
+.role-option input:disabled {
+  cursor: not-allowed;
 }
 </style>
 

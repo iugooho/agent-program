@@ -31,7 +31,7 @@ app:
   bootstrap-admin:
     enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:false}
     username: ${APP_BOOTSTRAP_ADMIN_USERNAME:admin}
-    password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:Admin123456}
+    password: ${APP_BOOTSTRAP_ADMIN_PASSWORD:}
     email: ${APP_BOOTSTRAP_ADMIN_EMAIL:admin@example.com}
     nickname: ${APP_BOOTSTRAP_ADMIN_NICKNAME:Docker 管理员}
   auth:

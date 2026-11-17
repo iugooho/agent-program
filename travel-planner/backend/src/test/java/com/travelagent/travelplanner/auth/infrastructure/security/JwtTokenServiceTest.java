@@ -56,7 +56,7 @@ class JwtTokenServiceTest {
 
     private UserAccount user() {
         return new UserAccount(
-                7, "demo", "demo@example.com", "hash", "USER", "ACTIVE",
+                7, "demo", "demo@example.com", "hash", "ACTIVE",
                 "演示用户", null, LocalDateTime.now(), null);
     }
 

@@ -52,6 +52,9 @@ public class JwtTokenService implements TokenService {
         if (secret.length < MIN_SECRET_BYTES) {
             throw new IllegalStateException("app.auth.jwt.secret 至少需要 32 字节");
         }
+        if (properties.secret().startsWith("CHANGE_ME_")) {
+            throw new IllegalStateException("app.auth.jwt.secret 不能使用模板占位符");
+        }
         if (properties.issuer() == null || properties.issuer().isBlank()) {
             throw new IllegalStateException("app.auth.jwt.issuer 必须配置");
         }
@@ -80,7 +83,6 @@ public class JwtTokenService implements TokenService {
         return new AccessTokenClaims(
                 longClaim(claims, "sub", ErrorCode.UNAUTHENTICATED),
                 textClaim(claims, "username", ErrorCode.UNAUTHENTICATED),
-                textClaim(claims, "role", ErrorCode.UNAUTHENTICATED),
                 textClaim(claims, "sid", ErrorCode.UNAUTHENTICATED),
                 textClaim(claims, "jti", ErrorCode.UNAUTHENTICATED),
                 Instant.ofEpochSecond(longClaim(claims, "exp", ErrorCode.UNAUTHENTICATED)));
@@ -111,7 +113,6 @@ public class JwtTokenService implements TokenService {
         claims.put("iss", properties.issuer());
         claims.put("sub", user.id());
         claims.put("username", user.username());
-        claims.put("role", user.role());
         claims.put("sid", sessionId);
         claims.put("jti", UUID.randomUUID().toString());
         claims.put("type", tokenType);

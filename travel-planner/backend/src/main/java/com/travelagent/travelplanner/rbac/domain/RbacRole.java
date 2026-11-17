@@ -8,6 +8,13 @@ package com.travelagent.travelplanner.rbac.domain;
  * @param name 角色名称
  * @param description 角色说明
  * @param builtIn 是否为内置角色
+ * @param status ACTIVE、DISABLED 或 DELETED
  */
-public record RbacRole(long id, String code, String name, String description, boolean builtIn) {
+public record RbacRole(
+        long id,
+        String code,
+        String name,
+        String description,
+        boolean builtIn,
+        String status) {
 }

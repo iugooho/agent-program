@@ -54,13 +54,23 @@ class DatabaseMigrationTest {
             }
 
             try (ResultSet row = statement.executeQuery(
-                    "SELECT id, role, status, create_time, update_time FROM users WHERE username = 'tester'")) {
+                    "SELECT id, status, create_time, update_time FROM users WHERE username = 'tester'")) {
                 assertTrue(row.next(), "应该能查到刚插入的用户");
                 assertEquals(1L, row.getLong("id"), "自增主键应从 1 开始");
-                assertEquals("USER", row.getString("role"), "角色应使用默认值");
                 assertEquals("ACTIVE", row.getString("status"), "状态应使用默认值");
                 assertNotNull(row.getTimestamp("create_time"), "create_time 应由默认值填充");
                 assertNotNull(row.getTimestamp("update_time"), "update_time 应由默认值填充");
+            }
+
+            try (ResultSet row = statement.executeQuery("""
+                    SELECT COUNT(*)
+                    FROM information_schema.columns
+                    WHERE LOWER(table_schema) = 'public'
+                      AND LOWER(table_name) = 'users'
+                      AND LOWER(column_name) = 'role'
+                    """)) {
+                assertTrue(row.next());
+                assertEquals(0, row.getInt(1), "V4 应删除旧的 users.role 字段");
             }
 
             statement.executeUpdate("""

@@ -44,7 +44,11 @@ public record UserResponse(
     public static UserResponse from(UserAccount user, EffectiveAuthorization authorization) {
         String primaryRole = authorization.roles().contains("SUPER_ADMIN")
                 ? "SUPER_ADMIN"
-                : authorization.roles().contains("ADMIN") ? "ADMIN" : user.role();
+                : authorization.roles().contains("ADMIN")
+                        ? "ADMIN"
+                        : authorization.roles().contains("USER")
+                                ? "USER"
+                                : "UNASSIGNED";
         return new UserResponse(
                 user.id(),
                 user.username(),

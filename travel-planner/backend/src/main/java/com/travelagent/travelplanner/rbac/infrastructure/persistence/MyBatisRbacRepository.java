@@ -8,6 +8,7 @@ import com.travelagent.travelplanner.rbac.domain.RbacSnapshot;
 import com.travelagent.travelplanner.rbac.domain.RbacUser;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 
@@ -37,7 +38,12 @@ public class MyBatisRbacRepository implements RbacRepository {
     public RbacSnapshot loadSnapshot() {
         List<RbacRole> roles = mapper.findRoles().stream()
                 .map(row -> new RbacRole(
-                        row.id(), row.code(), row.name(), row.description(), row.builtIn()))
+                        row.id(),
+                        row.code(),
+                        row.name(),
+                        row.description(),
+                        row.builtIn(),
+                        row.status()))
                 .toList();
         List<RbacPermission> permissions = mapper.findPermissions().stream()
                 .map(row -> new RbacPermission(
@@ -59,6 +65,40 @@ public class MyBatisRbacRepository implements RbacRepository {
     }
 
     @Override
+    public Optional<RbacRole> findRoleById(long roleId) {
+        return Optional.ofNullable(mapper.findRoleById(roleId)).map(this::toDomain);
+    }
+
+    @Override
+    public Optional<RbacRole> findRoleByCode(String code) {
+        return Optional.ofNullable(mapper.findRoleByCode(code)).map(this::toDomain);
+    }
+
+    @Override
+    public RbacRole createRole(String code, String name, String description) {
+        mapper.insertRole(code, name, description);
+        return findRoleByCode(code)
+                .orElseThrow(() -> new IllegalStateException("角色创建后未能查询到"));
+    }
+
+    @Override
+    public void updateRole(long roleId, String name, String description) {
+        mapper.updateRole(roleId, name, description);
+    }
+
+    @Override
+    public void updateRoleStatus(long roleId, String status) {
+        mapper.updateRoleStatus(roleId, status);
+    }
+
+    @Override
+    public void deleteRole(long roleId) {
+        mapper.deleteRoleUsers(roleId);
+        mapper.deleteRolePermissions(roleId);
+        mapper.markRoleDeleted(roleId);
+    }
+
+    @Override
     public void replaceRolePermissions(long roleId, List<Long> permissionIds) {
         mapper.deleteRolePermissions(roleId);
         if (!permissionIds.isEmpty()) {
@@ -72,5 +112,15 @@ public class MyBatisRbacRepository implements RbacRepository {
         if (!roleIds.isEmpty()) {
             mapper.insertUserRoles(userId, roleIds);
         }
+    }
+
+    private RbacRole toDomain(RbacRows.RoleRow row) {
+        return new RbacRole(
+                row.id(),
+                row.code(),
+                row.name(),
+                row.description(),
+                row.builtIn(),
+                row.status());
     }
 }

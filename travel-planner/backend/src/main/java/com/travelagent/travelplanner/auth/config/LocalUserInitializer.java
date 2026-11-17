@@ -42,13 +42,18 @@ public class LocalUserInitializer implements ApplicationRunner {
             UserRepository userRepository,
             PasswordEncoder passwordEncoder,
             @Value("${app.dev-user.username:demo}") String username,
-            @Value("${app.dev-user.password:Demo123456}") String password,
+            @Value("${app.dev-user.password:}") String password,
             @Value("${app.dev-user.email:demo@example.com}") String email,
             @Value("${app.dev-user.nickname:本地演示用户}") String nickname,
             @Value("${app.dev-admin.username:admin}") String adminUsername,
-            @Value("${app.dev-admin.password:Admin123456}") String adminPassword,
+            @Value("${app.dev-admin.password:}") String adminPassword,
             @Value("${app.dev-admin.email:admin@example.com}") String adminEmail,
             @Value("${app.dev-admin.nickname:本地管理员}") String adminNickname) {
+        if (isUnconfigured(password) || isUnconfigured(adminPassword)) {
+            throw new IllegalStateException(
+                    "local profile 必须通过 APP_DEV_USER_PASSWORD 和 "
+                            + "APP_DEV_ADMIN_PASSWORD 配置开发账号密码");
+        }
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.username = username;
@@ -73,5 +78,9 @@ public class LocalUserInitializer implements ApplicationRunner {
                     passwordEncoder.encode(adminPassword),
                     adminNickname);
         }
+    }
+
+    private static boolean isUnconfigured(String password) {
+        return password == null || password.isBlank() || password.startsWith("CHANGE_ME_");
     }
 }

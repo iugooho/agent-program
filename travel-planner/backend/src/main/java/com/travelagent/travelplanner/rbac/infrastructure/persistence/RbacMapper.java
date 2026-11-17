@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 /** RBAC 表查询与关系更新 Mapper。 */
 @Mapper
@@ -21,11 +22,115 @@ public interface RbacMapper {
      * @return 角色行
      */
     @Select("""
-            SELECT id, code, name, description, built_in AS builtIn
+            SELECT id, code, name, description, built_in AS builtIn, status
             FROM sys_role
+            WHERE status <> 'DELETED'
             ORDER BY id
             """)
     List<RoleRow> findRoles();
+
+    /**
+     * 按主键查询角色。
+     *
+     * @param roleId 角色主键
+     * @return 角色行
+     */
+    @Select("""
+            SELECT id, code, name, description, built_in AS builtIn, status
+            FROM sys_role
+            WHERE id = #{roleId}
+            LIMIT 1
+            """)
+    RoleRow findRoleById(@Param("roleId") long roleId);
+
+    /**
+     * 按编码查询角色，包括已删除角色，用于唯一性判断。
+     *
+     * @param code 角色编码
+     * @return 角色行
+     */
+    @Select("""
+            SELECT id, code, name, description, built_in AS builtIn, status
+            FROM sys_role
+            WHERE code = #{code}
+            LIMIT 1
+            """)
+    RoleRow findRoleByCode(@Param("code") String code);
+
+    /**
+     * 创建自定义角色。
+     *
+     * @param code 角色编码
+     * @param name 角色名称
+     * @param description 角色说明
+     * @return 插入行数
+     */
+    @Insert("""
+            INSERT INTO sys_role (code, name, description, built_in, status)
+            VALUES (#{code}, #{name}, #{description}, FALSE, 'ACTIVE')
+            """)
+    int insertRole(
+            @Param("code") String code,
+            @Param("name") String name,
+            @Param("description") String description);
+
+    /**
+     * 更新角色名称和说明。
+     *
+     * @param roleId 角色主键
+     * @param name 角色名称
+     * @param description 角色说明
+     * @return 更新行数
+     */
+    @Update("""
+            UPDATE sys_role
+            SET name = #{name},
+                description = #{description},
+                update_time = CURRENT_TIMESTAMP(6)
+            WHERE id = #{roleId}
+            """)
+    int updateRole(
+            @Param("roleId") long roleId,
+            @Param("name") String name,
+            @Param("description") String description);
+
+    /**
+     * 更新角色状态。
+     *
+     * @param roleId 角色主键
+     * @param status 角色状态
+     * @return 更新行数
+     */
+    @Update("""
+            UPDATE sys_role
+            SET status = #{status},
+                update_time = CURRENT_TIMESTAMP(6)
+            WHERE id = #{roleId}
+            """)
+    int updateRoleStatus(@Param("roleId") long roleId, @Param("status") String status);
+
+    /**
+     * 删除角色的全部用户关联。
+     *
+     * @param roleId 角色主键
+     * @return 删除行数
+     */
+    @Delete("DELETE FROM sys_user_role WHERE role_id = #{roleId}")
+    int deleteRoleUsers(@Param("roleId") long roleId);
+
+    /**
+     * 将角色标记为已删除。
+     *
+     * @param roleId 角色主键
+     * @return 更新行数
+     */
+    @Update("""
+            UPDATE sys_role
+            SET status = 'DELETED',
+                update_time = CURRENT_TIMESTAMP(6)
+            WHERE id = #{roleId}
+            """)
+    int markRoleDeleted(@Param("roleId") long roleId);
 
     /**
      * 查询全部权限。
@@ -87,6 +192,7 @@ public interface RbacMapper {
             FROM sys_role r
             JOIN sys_user_role ur ON ur.role_id = r.id
             WHERE ur.user_id = #{userId}
+              AND r.status = 'ACTIVE'
             ORDER BY r.id
             """)
     List<String> findRoleCodesByUser(@Param("userId") long userId);
@@ -102,7 +208,9 @@ public interface RbacMapper {
             FROM sys_permission p
             JOIN sys_role_permission rp ON rp.permission_id = p.id
             JOIN sys_user_role ur ON ur.role_id = rp.role_id
+            JOIN sys_role r ON r.id = ur.role_id
             WHERE ur.user_id = #{userId}
+              AND r.status = 'ACTIVE'
             ORDER BY p.sort_order, p.id
             """)
     List<String> findPermissionCodesByUser(@Param("userId") long userId);

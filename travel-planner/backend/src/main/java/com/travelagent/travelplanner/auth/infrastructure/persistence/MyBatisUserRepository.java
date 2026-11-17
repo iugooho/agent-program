@@ -75,7 +75,6 @@ public class MyBatisUserRepository implements UserRepository {
                 row.username(),
                 row.email(),
                 row.passwordHash(),
-                row.role(),
                 row.status(),
                 row.nickname(),
                 row.phone(),

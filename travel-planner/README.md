@@ -13,20 +13,73 @@
 # 后端：编译 + 单元测试
 mvn -f backend/pom.xml test
 
-# 后端：启动服务（默认 8080）
-mvn -f backend/pom.xml spring-boot:run
-
 # 前端：安装依赖并启动开发服务器（固定使用 http://localhost:5174）
 cd frontend
 npm install
 npm run dev
 ```
 
-Windows 下一键启动（后端在新窗口运行，前端在当前窗口）：
+本地完整启动使用带占位符的环境变量模板。首次运行先复制并修改密码，再执行一键启动脚本：
 
 ```powershell
+Copy-Item .env.local.example .env.local
+# 编辑 .env.local，替换所有 CHANGE_ME_* 占位符
 .\scripts\dev.ps1
 ```
+
+脚本会加载 `.env.local`，后端在新窗口运行，前端在当前窗口启动。`.env.local` 已被 Git 忽略。
+
+### IDEA 带凭据的运行配置模板
+
+需要连接 MySQL、Redis 和 SMTP 的后端运行配置不要把真实密码提交到仓库。仓库提供两套模板：
+
+```text
+.run-templates/backend-local.run.xml
+.run-templates/backend-prod.run.xml
+```
+
+复制到项目根目录的 `.run/` 后，只修改其中的 `CHANGE_ME_*` 占位符：
+
+```powershell
+New-Item -ItemType Directory -Force -Path ..\.run | Out-Null
+Copy-Item .run-templates\backend-local.run.xml ..\.run\backend-local.run.xml
+Copy-Item .run-templates\backend-prod.run.xml ..\.run\backend-prod.run.xml
+```
+
+然后在 IDEA 中编辑对应运行配置：
+
+- local H2：`APP_JWT_SECRET`、`APP_REDIS_PASSWORD`、
+  `APP_DEV_USER_PASSWORD`、`APP_DEV_ADMIN_PASSWORD`
+- prod MySQL：`DB_USERNAME`、`DB_PASSWORD`、`APP_JWT_SECRET`、
+  `APP_REDIS_PASSWORD`、`APP_EMAIL_USERNAME`、`APP_EMAIL_PASSWORD`、
+  `APP_EMAIL_FROM`
+
+凭据由运行配置的环境变量提供，不需要修改 `application-*.yml`：
+
+```text
+DB_USERNAME
+DB_PASSWORD
+APP_JWT_SECRET
+APP_REDIS_PASSWORD
+APP_EMAIL_USERNAME
+APP_EMAIL_PASSWORD
+APP_EMAIL_FROM
+APP_DEV_USER_PASSWORD
+APP_DEV_ADMIN_PASSWORD
+```
+
+`.run/` 已被 Git 忽略，填好的本机配置不会被提交。
+
+如果不想使用 IDEA 模板，也可以在启动前把同一组变量写入当前终端环境。`backend` 在占位符没有替换时会直接拒绝启动，避免误用仓库默认凭据。
+
+### 本地 H2 演示账号
+
+`local` profile 会根据以下环境变量创建两个演示账号：
+
+- 用户名 `demo`：密码读取 `APP_DEV_USER_PASSWORD`
+- 用户名 `admin`：密码读取 `APP_DEV_ADMIN_PASSWORD`
+
+密码只存在于本机环境变量或 `.env` 中，`.env.example` 不包含可直接使用的默认密码。
 
 ### Docker Desktop 安装与 Docker Compose 启动
 
@@ -51,14 +104,14 @@ Compose 主要配置项：
 
 | 变量 | 默认值 | 说明 |
 | --- | --- | --- |
-| `MYSQL_ROOT_PASSWORD` | `root123456` | MySQL root 密码，生产必须修改 |
+| `MYSQL_ROOT_PASSWORD` | 必填占位符 | MySQL root 密码 |
 | `MYSQL_DATABASE` | `travel` | 业务数据库名 |
 | `MYSQL_USER` | `travel` | 后端使用的 MySQL 用户 |
-| `MYSQL_PASSWORD` | `travel123456` | 后端数据库密码，生产必须修改 |
-| `REDIS_PASSWORD` | `redis123456` | Redis 密码，生产必须修改 |
-| `APP_JWT_SECRET` | 开发默认值 | JWT 签名密钥，至少 32 字节，生产必须修改 |
+| `MYSQL_PASSWORD` | 必填占位符 | 后端数据库密码 |
+| `REDIS_PASSWORD` | 必填占位符 | Redis 密码 |
+| `APP_JWT_SECRET` | 必填占位符 | JWT 签名密钥，至少 32 字节 |
 | `APP_BOOTSTRAP_ADMIN_USERNAME` | `admin` | 首次启动创建的管理员账号 |
-| `APP_BOOTSTRAP_ADMIN_PASSWORD` | `Admin123456` | 首次启动创建的管理员密码，生产必须修改 |
+| `APP_BOOTSTRAP_ADMIN_PASSWORD` | 必填占位符 | 首次启动创建的管理员密码 |
 | `MYSQL_PORT` | `3307` | 宿主机 MySQL 端口，避免与本机 3306 冲突 |
 | `REDIS_PORT` | `6381` | 宿主机 Redis 端口 |
 | `BACKEND_PORT` | `8080` | 宿主机后端端口 |
@@ -73,14 +126,15 @@ Compose 主要配置项：
 - MySQL：`localhost:3307`
 - Redis：`localhost:6381`
 
-全新数据库默认创建 Docker 管理员：
+全新数据库会创建 Docker 管理员：
 
 ```text
 用户名：admin
-密码：Admin123456
+密码：.env 中 APP_BOOTSTRAP_ADMIN_PASSWORD 的值
 ```
 
-管理员凭据、数据库密码和 JWT 密钥都可以在 `.env` 中修改。生产环境不能继续使用示例默认值。
+Compose 对数据库密码、Redis 密码、JWT 密钥和管理员密码使用必填变量；没有填写时不会启动，
+避免误用仓库默认密码。
 
 Docker 开发环境使用本地邮箱发件箱模拟验证码投递，验证码不打印到普通应用日志：
 
@@ -136,8 +190,11 @@ mvn -f backend/pom.xml spring-boot:run
 
 - 第一版采用最小 RBAC：`USER`、`ADMIN`、`SUPER_ADMIN` 三个角色。
 - 用户与角色、角色与权限分别存于 `sys_user_role`、`sys_role_permission`；JWT 只负责身份，权限每次按用户 ID 从数据库恢复。
+- `users.role` 已由 Flyway V4 删除；`/users/me.role` 仍保留，但改为按 `SUPER_ADMIN > ADMIN > USER` 动态计算主角色。
 - `/api/v1/admin/**` 在 URL 级要求 `ADMIN` 或 `SUPER_ADMIN`，具体操作继续用 `@PreAuthorize("hasAuthority('...')")` 校验权限点。
 - 超级管理员专属接口同时要求 `ROLE_SUPER_ADMIN` 和 `admin.rbac.manage`。
+- 超级管理员可在可视化界面创建、编辑、启用、停用和删除自定义角色；停用或删除后权限立即失效。
+- `USER`、`ADMIN`、`SUPER_ADMIN` 是内置角色，禁止停用或删除；超级管理员权限固定为全部权限。
 - 业务资源查询必须同时使用当前用户 ID 和资源 ID，不能只按资源 ID 查询后直接返回。
 - 后续新增资源归属测试：用户 A 访问用户 B 的资源必须返回 403 或 404，不能返回资源内容。
 
@@ -147,10 +204,11 @@ mvn -f backend/pom.xml spring-boot:run
 
 | 角色 | 账号 | 密码 |
 | --- | --- | --- |
-| 普通用户 | `demo` | `Demo123456` |
-| 管理员 | `admin` | `Admin123456` |
+| 普通用户 | `demo` | `APP_DEV_USER_PASSWORD` |
+| 管理员 | `admin` | `APP_DEV_ADMIN_PASSWORD` |
 
-IDEA 运行配置选择“backend: local demo (H2)”。原来的
+先把 `.run-templates/backend-local.run.xml` 复制到 `.run/` 并替换密码占位符，
+然后在 IDEA 运行配置中选择“backend: local H2 (edit placeholders)”。原来的
 “backend: spring-boot:run”连接的是 MySQL `prod` 环境，不会执行本地演示账号初始化。
 
 启动后访问 `http://127.0.0.1:5174`，登录任一账号，再进入“权限验证”页面：
@@ -178,6 +236,7 @@ mvn -f backend/pom.xml spring-boot:run
 账号相关页面使用自托管 SVG 图形验证码：
 
 - 发送登录或注册邮箱验证码前必须完成人机验证。
+- 邮箱验证码登录采用统一提示；未注册邮箱会返回正常发送结果，但不会真实生成或投递验证码，避免账号枚举和邮件滥用。
 - 账号密码首次输入错误后，页面立即显示登录验证码；未携带有效验证码的后续请求返回 `428 / code=1010`。
 - CAPTCHA 挑战与当前业务请求一起校验，答案提交后立即消费；默认 2 分钟有效，并绑定 IP、User-Agent 和用途。
 - 普通接口、认证接口和 CAPTCHA 接口分别做 Redis 原子限流；超限返回 `429 / code=1012`。

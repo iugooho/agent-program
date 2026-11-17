@@ -17,7 +17,7 @@ public interface UserAccountMapper {
      * @return 用户行，不存在时返回 null
      */
     @Select("""
-            SELECT id, username, email, password_hash AS passwordHash, role, status,
+            SELECT id, username, email, password_hash AS passwordHash, status,
                    nickname, phone, create_time AS createTime, last_login_time AS lastLoginTime
             FROM users
             WHERE username = #{username}
@@ -32,7 +32,7 @@ public interface UserAccountMapper {
      * @return 用户行，不存在时返回 null
      */
     @Select("""
-            SELECT id, username, email, password_hash AS passwordHash, role, status,
+            SELECT id, username, email, password_hash AS passwordHash, status,
                    nickname, phone, create_time AS createTime, last_login_time AS lastLoginTime
             FROM users
             WHERE email = #{email}
@@ -47,7 +47,7 @@ public interface UserAccountMapper {
      * @return 用户行，不存在时返回 null
      */
     @Select("""
-            SELECT id, username, email, password_hash AS passwordHash, role, status,
+            SELECT id, username, email, password_hash AS passwordHash, status,
                    nickname, phone, create_time AS createTime, last_login_time AS lastLoginTime
             FROM users
             WHERE id = #{id}
@@ -103,8 +103,8 @@ public interface UserAccountMapper {
      * @return 插入行数
      */
     @Insert("""
-            INSERT INTO users (username, email, password_hash, role, status, nickname)
-            VALUES (#{username}, #{email}, #{passwordHash}, 'USER', 'ACTIVE', #{nickname})
+            INSERT INTO users (username, email, password_hash, status, nickname)
+            VALUES (#{username}, #{email}, #{passwordHash}, 'ACTIVE', #{nickname})
             """)
     int insertUser(
             @Param("username") String username,
@@ -140,8 +140,8 @@ public interface UserAccountMapper {
      * @return 插入行数
      */
     @Insert("""
-            INSERT INTO users (username, email, password_hash, role, status, nickname)
-            VALUES (#{username}, #{email}, #{passwordHash}, 'USER', 'ACTIVE', #{nickname})
+            INSERT INTO users (username, email, password_hash, status, nickname)
+            VALUES (#{username}, #{email}, #{passwordHash}, 'ACTIVE', #{nickname})
             """)
     int insertLocalUser(
             @Param("username") String username,
@@ -159,8 +159,8 @@ public interface UserAccountMapper {
      * @return 插入行数
      */
     @Insert("""
-            INSERT INTO users (username, email, password_hash, role, status, nickname)
-            VALUES (#{username}, #{email}, #{passwordHash}, 'ADMIN', 'ACTIVE', #{nickname})
+            INSERT INTO users (username, email, password_hash, status, nickname)
+            VALUES (#{username}, #{email}, #{passwordHash}, 'ACTIVE', #{nickname})
             """)
     int insertLocalAdmin(
             @Param("username") String username,

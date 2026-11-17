@@ -45,6 +45,12 @@ export interface ApiResponseRbacOverviewResponse {
   data: RbacOverviewResponse
 }
 
+export interface ApiResponseRbacRoleResponse {
+  code: number
+  message: string
+  data: RbacRoleResponse
+}
+
 export interface ApiResponseString {
   code: number
   message: string
@@ -194,6 +200,7 @@ export interface RbacRoleResponse {
   name: string
   description: string
   builtIn: boolean
+  status: string
   userCount: number
   permissionIds: number[]
 }
@@ -219,8 +226,24 @@ export interface RegisterRequest {
   emailCode: string
 }
 
+export interface RoleCreateRequest {
+  code: string
+  name: string
+  description?: string
+  permissionIds?: number[]
+}
+
 export interface RolePermissionsRequest {
   permissionIds: number[]
+}
+
+export interface RoleStatusRequest {
+  status: string
+}
+
+export interface RoleUpdateRequest {
+  name: string
+  description?: string
 }
 
 export interface TripPlanRequest {

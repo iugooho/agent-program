@@ -238,6 +238,11 @@ public class AuthService {
         if (!emailCodeStore.tryReserveSend(normalizedEmail, purpose, options.retryAfter())) {
             throw new BusinessException(ErrorCode.EMAIL_CODE_TOO_FREQUENT);
         }
+        if (purpose == EmailPurpose.LOGIN
+                && userRepository.findByEmail(normalizedEmail).isEmpty()) {
+            // 统一返回发送结果但不投递，避免账号枚举并防止向任意邮箱发送验证码。
+            return new EmailCodeDelivery(options.ttl().toSeconds(), options.retryAfter().toSeconds());
+        }
         String code = String.format(Locale.ROOT, "%06d", RANDOM.nextInt(1_000_000));
         emailCodeStore.saveCode(
                 normalizedEmail,

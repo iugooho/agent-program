@@ -26,6 +26,7 @@ mvn -Pquality verify    # 代码规范检查（Checkstyle）
 - SVG CAPTCHA、登录失败风控和 Redis 限流。
 - 用户资料、安全资料和长期偏好更新。
 - 最小 RBAC 与超级管理员权限分配。
+- 自定义角色创建、编辑、启停和软删除；停用角色不参与权限计算。
 
 当前已实现接口以 [OpenAPI 契约](../docs/openapi.json) 为准。
 
