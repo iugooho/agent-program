@@ -279,7 +279,101 @@ mvn -f backend/pom.xml spring-boot:run
 }
 ```
 
-前端页面位于 `/trips`。生成接口会同步保存计划，页面可以按当前角色数据范围查看列表、打开详情和删除计划。
+前端页面位于 `/trips`（同步结构化生成）和 `/chat`（实时多轮对话）。生成接口会同步保存计划，页面可以按当前角色数据范围查看列表、打开详情和删除计划；对话修改的增量重算仍在迭代。
+
+## 实时对话（SSE）
+
+实时对话对应需求文档「阶段二：AI 对话」：会话与消息先落库，再通过 SSE 推送助手增量。
+入口是 `/chat`，支持多轮上下文、历史消息翻页、断线续传和停止接收。
+
+### 分层与可替换点
+
+```
+ConversationController / ChatStreamController
+        │
+        ▼
+ChatService（事务、归属校验、先落库） ──► ChatReplyWorker（异步生成、部分内容落库）
+        │                                        │
+        ▼                                        ▼
+ConversationRepository / ChatMessageRepository   ChatModelRouter ──► ChatModelPort
+        │                                                              ├─ SpringAiChatModel（DeepSeek）
+        ▼                                                              └─ RuleBasedChatModel（无密钥降级）
+MyBatis Mapper（conversations / messages）          ChatStreamHub（内存回放，可换 Redis/STOMP）
+```
+
+- `ChatModelPort` 是唯一的模型端口：真实模型、规则降级和后续新增的厂商都只是 `infrastructure`
+  实现，用例层不出现 `ChatClient`、HTTP 地址或供应商枚举。
+- `ChatModelRouter` 按 `app.chat.providers` 的候选链选择第一个可用实现；换模型只改配置，
+  主模型失败且尚未产出内容时会自动降级到 `rule`。
+- `ChatStreamHub` 是事件总线端口，当前是单机内存实现（按消息保存带序号的增量缓冲）；
+  多实例部署时把它换成 Redis Pub/Sub 或 STOMP 广播即可，`ChatReplyWorker` 和 SSE 接口不用改。
+- 提示词、上下文条数/字符预算、标题和摘要长度、超时、心跳、线程池全部在 `app.chat.*`，
+  不写死在 Java 代码里。
+- 迁移脚本 `V10__realtime_chat.sql` 建立 `conversations`、`messages` 和 `chat.use` / `chat.delete`
+  权限。助手消息先插入 `PENDING` 占位，生成中按 `flush-interval-ms` 落部分内容并标记
+  `STREAMING`，正常结束 `COMPLETED`，失败 `FAILED` 且保留已生成内容。
+
+### 接口
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/v1/conversations` | 创建会话，`title` 可省略 |
+| GET | `/api/v1/conversations?page=&size=` | 当前用户会话分页 |
+| GET | `/api/v1/conversations/{conversationId}` | 会话详情 |
+| DELETE | `/api/v1/conversations/{conversationId}` | 软删除本人会话 |
+| GET | `/api/v1/conversations/{conversationId}/messages?beforeId=&limit=` | 消息历史，按 id 升序、游标向前翻页 |
+| POST | `/api/v1/conversations/{conversationId}/messages` | 发送消息，返回用户消息与助手占位 |
+| GET | `/api/v1/conversations/{conversationId}/messages/{messageId}/stream` | 订阅助手回复 SSE |
+
+发送消息只负责落库并返回 `{conversation, userMessage, reply}`，`reply.status` 为 `PENDING`；
+前端凭 `reply.id` 订阅 SSE。这样即使浏览器提前断开，生成仍会在后台完成并落库，
+重新进入会话能直接看到完整回复。
+
+### SSE 事件协议
+
+| event | data | 说明 |
+| --- | --- | --- |
+| `ready` | `{messageId}` | 连接建立，开始回放/推送 |
+| `delta` | `{messageId, sequence, content}` | 增量文本，事件 `id` 等于 `sequence` |
+| `done` | `ChatMessageResponse` | 生成完成，内容为完整消息 |
+| `error` | `{code, message}` | 生成失败，走统一错误码 |
+
+- 浏览器 `EventSource` 不能自定义 `Authorization` 头，前端因此使用 `fetch` +
+  `ReadableStream` 读取同一条 SSE 流，Bearer 认证与 401 刷新逻辑复用 `src/api/http.ts`。
+- 生产 Nginx 配置已对 `/api/` 关闭 `proxy_buffering` 并放宽 `proxy_read_timeout`，
+  否则反向代理会把增量攒到响应结束才下发；见 `frontend/nginx.conf`。
+- 断线重连带 `Last-Event-ID: <最后收到的 delta id>`，服务端只回放该序号之后的增量；
+  没有可回放缓冲时会回退为读取数据库中的完整消息。
+- 连接建立前的参数或归属错误仍返回统一 `ApiResponse`；流建立后的错误走 `error` 事件。
+
+### 配置
+
+| 配置 | 默认值 | 说明 |
+| --- | --- | --- |
+| `APP_CHAT_PROVIDERS` | `spring-ai,rule` | 模型候选链，按顺序选择可用实现 |
+| `DEEPSEEK_API_KEY` + `SPRING_AI_MODEL_CHAT=deepseek` | 空 / `none` | 配置后启用真实大模型；否则走规则降级 |
+| `APP_CHAT_CONTEXT_MESSAGES` | `20` | 带入提示词的历史消息条数 |
+| `APP_CHAT_CONTEXT_CHAR_BUDGET` | `12000` | 历史消息总字符预算 |
+| `APP_CHAT_MAX_CONTENT_CHARS` | `4000` | 单条用户消息最大长度 |
+| `APP_CHAT_STREAM_TIMEOUT` | `5m` | SSE 连接超时 |
+| `APP_CHAT_HEARTBEAT_INTERVAL` | `15s` | SSE 心跳间隔 |
+| `APP_CHAT_FLUSH_INTERVAL_MS` | `800` | 生成中部分内容落库的最小间隔 |
+| `APP_CHAT_RULE_CHUNK_DELAY` | `25ms` | 仅规则降级模式的增量间隔，便于本地看到流式效果，设 `0` 关闭 |
+| `APP_CHAT_EXECUTOR_*` | `4/16/200` | 生成线程池核心/最大/队列 |
+
+完整变量见 [`.env.example`](.env.example)。系统提示词在 `application.yml` 的
+`app.chat.system-prompt`，支持 `{{today}}` 占位符，改提示词不需要改 Java。
+
+### 本地体验
+
+1. 启动后端（`local` profile 使用 H2；无需 Redis 也能跑对话）。
+2. `npm --prefix frontend run dev`，打开 `http://localhost:5174/chat`。
+3. 用本地 `demo` 账号登录后新建对话，输入「从成都去云南 5 天，2 个人，预算 8000，休闲一点，不要购物」。
+4. 没有配置 DeepSeek 密钥时会显示「本地规则」回复，仍能演示落库、SSE 增量、断线重连和会话切换；
+   配置密钥后自动切换为大模型。
+
+「停止接收」只停止当前浏览器的接收，后台生成不会中断，这是为了满足「消息先落库再推送」和
+断线恢复；需要真正取消生成时应扩展 `ChatReplyWorker` 的取消语义，而不是在传输层做假删除。
 
 ## 当前已实现接口
 
@@ -345,6 +439,18 @@ Docker Compose 使用独立 `avatar-data` volume。
 | GET | `/api/v1/health` | 统一业务健康检查 |
 | GET | `/actuator/health` | Spring Boot 健康检查 |
 | GET | `/api/v1/demo/hello` | 登录态接口自检 |
+
+### 实时对话
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/api/v1/conversations` | 创建对话会话 |
+| GET | `/api/v1/conversations` | 当前用户会话分页 |
+| GET | `/api/v1/conversations/{conversationId}` | 会话详情 |
+| DELETE | `/api/v1/conversations/{conversationId}` | 软删除本人会话 |
+| GET | `/api/v1/conversations/{conversationId}/messages` | 消息历史 |
+| POST | `/api/v1/conversations/{conversationId}/messages` | 发送消息并创建助手占位 |
+| GET | `/api/v1/conversations/{conversationId}/messages/{messageId}/stream` | SSE 订阅助手回复 |
 
 ## 接口契约（前后端唯一可信源）
 

@@ -23,6 +23,12 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/chat/:conversationId?',
+    name: 'chat',
+    component: () => import('@/views/ChatView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/trips',
     name: 'trips',
     component: () => import('@/views/TripPlannerView.vue'),

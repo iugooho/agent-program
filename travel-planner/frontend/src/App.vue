@@ -44,6 +44,7 @@ onBeforeUnmount(() => {
     <strong>travel-planner</strong>
     <nav>
       <RouterLink to="/"> 首页 </RouterLink>
+      <RouterLink to="/chat"> 实时对话 </RouterLink>
       <RouterLink to="/trips"> 智能规划 </RouterLink>
       <RouterLink v-if="auth.authenticated && auth.can('user.profile.read')" to="/profile">
         个人中心

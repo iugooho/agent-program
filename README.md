@@ -201,4 +201,10 @@ CI 的前端 job 增加了契约同步校验（详见 6.6 节）。
 前端把 Prettier 接进 CI（`format:check`），并把排版权收归 Prettier、关掉两条会互相打架的 vue 规则；
 `scaffold-cli` 本体也挂上 Checkstyle（`mvn -Pquality verify`），与它生成的模板用同一份规则。
 
+2026-11-20：`travel-planner` 完成实时对话场景（需求文档「阶段二：AI 对话」）：
+`conversations` / `messages` 迁移与 `chat.use` / `chat.delete` 权限、会话与消息 REST、
+SSE 增量推送与 `Last-Event-ID` 断线续传、`ChatModelPort` 模型端口与 `rule` 降级、
+前端 `/chat` 页面。后端 98 个测试、前端 13 个测试通过；实现细节见
+[travel-planner/README.md](travel-planner/README.md) 的「实时对话（SSE）」。
+
 `.run/` 保留下来并指向新骨架：`backend: spring-boot:run`（默认 8080）、`backend: mvn test`、`backend: quality (checkstyle)`、`frontend: npm run dev`（默认 5173），用 IDEA 打开仓库根目录即可直接点运行。

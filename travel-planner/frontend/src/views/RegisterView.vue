@@ -3,6 +3,7 @@ import { computed, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 
 import type { CaptchaAnswer } from '@/api/captcha'
+import { AuthApiError } from '@/api/auth'
 import CaptchaChallenge from '@/components/CaptchaChallenge.vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -25,10 +26,7 @@ const form = reactive({
   emailCode: ''
 })
 
-const canSendCode = computed(
-  () =>
-    form.email.length > 0 && captcha.value !== null && countdown.value === 0 && !sendingCode.value
-)
+const canSendCode = computed(() => countdown.value === 0 && !sendingCode.value)
 
 async function submit(): Promise<void> {
   errorMessage.value = ''
@@ -47,9 +45,13 @@ async function submit(): Promise<void> {
 async function sendCode(): Promise<void> {
   errorMessage.value = ''
   successMessage.value = ''
+  if (!form.email.trim()) {
+    errorMessage.value = '请先填写邮箱'
+    return
+  }
   const currentCaptcha = captcha.value
   if (!currentCaptcha) {
-    errorMessage.value = '请先完成人机验证'
+    errorMessage.value = '请先输入图形验证码'
     return
   }
   sendingCode.value = true
@@ -60,7 +62,13 @@ async function sendCode(): Promise<void> {
     captcha.value = null
     captchaKey.value += 1
   } catch (error: unknown) {
-    errorMessage.value = error instanceof Error ? error.message : '验证码发送失败'
+    if (error instanceof AuthApiError && (error.code === 1007 || error.code === 1012)) {
+      startCountdown(60)
+      errorMessage.value =
+        error.code === 1007 ? '发送过于频繁，请 60 秒后重试' : '请求过于频繁，请 60 秒后重试'
+    } else {
+      errorMessage.value = error instanceof Error ? error.message : '验证码发送失败'
+    }
     captcha.value = null
     captchaKey.value += 1
   } finally {
@@ -146,6 +154,7 @@ onUnmounted(() => {
             :reset-key="captchaKey"
             @changed="captcha = $event"
           />
+          <p class="send-hint">先填邮箱、输入图中字符，再点“发送验证码”。</p>
         </div>
 
         <label>
@@ -236,6 +245,12 @@ onUnmounted(() => {
   color: #334155;
   font-size: 14px;
   font-weight: 600;
+}
+
+.send-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
 }
 
 label {
