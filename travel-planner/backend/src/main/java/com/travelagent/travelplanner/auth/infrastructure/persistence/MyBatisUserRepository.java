@@ -50,6 +50,7 @@ public class MyBatisUserRepository implements UserRepository {
     public void createUser(String username, String email, String passwordHash, String nickname) {
         mapper.insertUser(username, email, passwordHash, nickname);
         mapper.assignRoleByUsername(username, "USER");
+        mapper.assignHeadquartersByUsername(username);
     }
 
     @Override
@@ -61,12 +62,14 @@ public class MyBatisUserRepository implements UserRepository {
     public void createLocalUser(String username, String email, String passwordHash, String nickname) {
         mapper.insertLocalUser(username, email, passwordHash, nickname);
         mapper.assignRoleByUsername(username, "USER");
+        mapper.assignHeadquartersByUsername(username);
     }
 
     @Override
     public void createLocalAdmin(String username, String email, String passwordHash, String nickname) {
         mapper.insertLocalAdmin(username, email, passwordHash, nickname);
         mapper.assignRoleByUsername(username, "SUPER_ADMIN");
+        mapper.assignHeadquartersByUsername(username);
     }
 
     private UserAccount toDomain(UserAccountRow row) {

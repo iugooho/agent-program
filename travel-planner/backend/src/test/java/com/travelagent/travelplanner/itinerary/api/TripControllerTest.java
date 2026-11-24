@@ -7,21 +7,29 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.travelagent.travelplanner.itinerary.application.TravelAgentService;
 import com.travelagent.travelplanner.itinerary.application.TravelAgentService.PlanningResult;
+import com.travelagent.travelplanner.itinerary.application.TravelPlanService;
 import com.travelagent.travelplanner.itinerary.domain.BudgetSummary;
 import com.travelagent.travelplanner.itinerary.domain.DayPlan;
 import com.travelagent.travelplanner.itinerary.domain.Itinerary;
 import com.travelagent.travelplanner.itinerary.domain.ItineraryItem;
 import com.travelagent.travelplanner.itinerary.domain.TripRequest;
+import com.travelagent.travelplanner.itinerary.domain.SavedTravelPlan;
+import com.travelagent.travelplanner.auth.infrastructure.security.AuthenticatedUser;
+import com.travelagent.travelplanner.auth.infrastructure.security.AuthenticatedUserProvider;
 import com.travelagent.travelplanner.support.WebMvcSecurityTestSupport;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -29,6 +37,7 @@ import org.springframework.test.web.servlet.MockMvc;
 /** 旅行规划接口的 MockMvc 测试。 */
 @WebMvcTest(TripController.class)
 @AutoConfigureMockMvc(addFilters = false)
+@Import(AuthenticatedUserProvider.class)
 class TripControllerTest extends WebMvcSecurityTestSupport {
 
     @Autowired
@@ -37,19 +46,34 @@ class TripControllerTest extends WebMvcSecurityTestSupport {
     @MockitoBean
     private TravelAgentService travelAgentService;
 
+    @MockitoBean
+    private TravelPlanService travelPlanService;
+
     @Test
     @DisplayName("POST /api/v1/trips/plan 返回结构化行程")
     void plansTrip() throws Exception {
-        when(travelAgentService.plan("去杭州玩一天")).thenReturn(result());
+        PlanningResult result = result();
+        when(travelAgentService.plan("去杭州玩一天")).thenReturn(result);
+        when(travelPlanService.save(7, result))
+                .thenReturn(new SavedTravelPlan(
+                        99,
+                        7,
+                        1L,
+                        result.request(),
+                        result.itinerary(),
+                        result.mode(),
+                        java.time.LocalDateTime.now()));
 
         mockMvc.perform(post("/api/v1/trips/plan")
+                        .with(authenticationPostProcessor())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"message\":\"去杭州玩一天\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.request.destinations[0]").value("杭州"))
                 .andExpect(jsonPath("$.data.itinerary.days[0].items[0].title").value("西湖"))
-                .andExpect(jsonPath("$.data.mode").value("rule+java"));
+                .andExpect(jsonPath("$.data.mode").value("rule+java"))
+                .andExpect(jsonPath("$.data.savedPlanId").value(99));
     }
 
     @Test
@@ -73,5 +97,23 @@ class TripControllerTest extends WebMvcSecurityTestSupport {
                 List.of(new DayPlan(1, LocalDate.now(), "杭州", List.of(item), List.of("晴"))),
                 List.of("价格以实时查询为准"), List.of());
         return new PlanningResult(request, itinerary, "rule+java");
+    }
+
+    private UsernamePasswordAuthenticationToken authentication() {
+        AuthenticatedUser user = new AuthenticatedUser(
+                7,
+                "demo",
+                "USER",
+                "session",
+                List.of("USER"),
+                List.of("trip.create", "trip.read", "trip.delete"));
+        return new UsernamePasswordAuthenticationToken(user, null, List.of());
+    }
+
+    private RequestPostProcessor authenticationPostProcessor() {
+        return request -> {
+            SecurityContextHolder.getContext().setAuthentication(authentication());
+            return request;
+        };
     }
 }

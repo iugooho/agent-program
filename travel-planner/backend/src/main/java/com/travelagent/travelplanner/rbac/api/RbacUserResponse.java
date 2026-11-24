@@ -13,6 +13,7 @@ import java.util.List;
  * @param status 状态
  * @param roleIds 已分配角色主键
  * @param roleCodes 已分配角色编码
+ * @param departmentIds 所属部门主键
  */
 public record RbacUserResponse(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long id,
@@ -21,5 +22,6 @@ public record RbacUserResponse(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String email,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String status,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Long> roleIds,
-        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> roleCodes) {
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<String> roleCodes,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Long> departmentIds) {
 }

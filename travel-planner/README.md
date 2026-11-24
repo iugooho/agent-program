@@ -188,15 +188,23 @@ mvn -f backend/pom.xml spring-boot:run
 
 ## 权限模型
 
-- 第一版采用最小 RBAC：`USER`、`ADMIN`、`SUPER_ADMIN` 三个角色。
+- 基础角色为 `USER`、`ADMIN`、`SUPER_ADMIN`，超级管理员可继续创建自定义角色。
 - 用户与角色、角色与权限分别存于 `sys_user_role`、`sys_role_permission`；JWT 只负责身份，权限每次按用户 ID 从数据库恢复。
 - `users.role` 已由 Flyway V4 删除；`/users/me.role` 仍保留，但改为按 `SUPER_ADMIN > ADMIN > USER` 动态计算主角色。
-- `/api/v1/admin/**` 在 URL 级要求 `ADMIN` 或 `SUPER_ADMIN`，具体操作继续用 `@PreAuthorize("hasAuthority('...')")` 校验权限点。
+- `/api/v1/admin/**` 在 URL 级要求 `admin.console.access` 权限码，不再硬编码 ADMIN 角色；具体操作继续用 `@PreAuthorize("hasAuthority('...')")` 校验权限点。
 - 超级管理员专属接口同时要求 `ROLE_SUPER_ADMIN` 和 `admin.rbac.manage`。
 - 超级管理员可在可视化界面创建、编辑、启用、停用和删除自定义角色；停用或删除后权限立即失效。
+- 权限点按 `目录 -> 菜单/页面/按钮/接口` 组织，包含父级、类型、路由和状态字段；新权限会自动授予超级管理员。
+- 超级管理员可新增和软删除自定义权限点；删除后权限立即失效但保留审计记录，系统内置权限不可删除。
+- 角色权限、用户角色、权限新增删除等授权操作写入 `sys_auth_audit_log`，可在 RBAC 页面“变更记录”中查看。
+- 权限支持依赖关系和内置权限包；勾选权限时前端自动补齐前置权限，并提供用户基础、行程操作、后台、审计和权限管理五个快速权限包。
+- 支持复制角色资料、权限和成员；权限保存前展示新增/移除预览，新增高风险权限必须二次确认。
+- 用户有效授权按权限版本缓存，RBAC 变更后版本号递增并使缓存失效。
 - `USER`、`ADMIN`、`SUPER_ADMIN` 是内置角色，禁止停用或删除；超级管理员权限固定为全部权限。
-- 业务资源查询必须同时使用当前用户 ID 和资源 ID，不能只按资源 ID 查询后直接返回。
-- 后续新增资源归属测试：用户 A 访问用户 B 的资源必须返回 403 或 404，不能返回资源内容。
+- 部门树保存在 `sys_department`，用户可归属多个部门，首次升级时已有用户统一归入总部。
+- 角色支持五种数据范围：全部数据、指定部门、本部门、本部门及下级部门、仅本人。
+- 旅行计划保存到 `travel_plan`，写入时记录所有者与主部门；列表查询使用数据范围 SQL 过滤，单条详情和删除再次校验资源归属。
+- 越权访问单条资源统一返回 `404 RESOURCE_NOT_FOUND`，避免泄露其他部门或用户是否拥有该资源。
 
 ### 本地 RBAC 手动演示
 
@@ -222,7 +230,7 @@ mvn -f backend/pom.xml spring-boot:run
 http://127.0.0.1:5174/admin/rbac
 ```
 
-页面左侧选择角色、中间勾选功能权限、右侧给用户分配角色。超级管理员角色固定拥有全部权限，避免误操作导致权限管理入口失效；系统同时禁止移除最后一个超级管理员。
+页面左侧提供“角色控制”“部门控制”“成员授权”“变更记录”四个纵向入口。角色控制可配置功能权限和数据范围，部门控制维护部门树与成员，成员授权可同时维护角色和所属部门。超级管理员角色固定拥有全部权限，避免误操作导致权限管理入口失效；系统同时禁止移除最后一个超级管理员。
 
 如果本机 Redis 未启动，可临时关闭 Redis 验证：
 
@@ -271,7 +279,7 @@ mvn -f backend/pom.xml spring-boot:run
 }
 ```
 
-前端页面位于 `/trips`。第一版是同步生成；对话修改、异步工作流和行程持久化作为后续迭代。
+前端页面位于 `/trips`。生成接口会同步保存计划，页面可以按当前角色数据范围查看列表、打开详情和删除计划。
 
 ## 当前已实现接口
 
@@ -299,8 +307,15 @@ mvn -f backend/pom.xml spring-boot:run
 | 方法 | 路径 | 权限 |
 | --- | --- | --- |
 | GET | `/api/v1/admin/rbac/overview` | 超级管理员 |
+| POST | `/api/v1/admin/rbac/departments` | 超级管理员 |
+| PUT | `/api/v1/admin/rbac/departments/{departmentId}` | 超级管理员 |
+| DELETE | `/api/v1/admin/rbac/departments/{departmentId}` | 超级管理员 |
+| PUT | `/api/v1/admin/rbac/departments/{departmentId}/members` | 超级管理员 |
+| PUT | `/api/v1/admin/rbac/roles/{roleId}/data-scope` | 超级管理员 |
 | PUT | `/api/v1/admin/rbac/roles/{roleId}/permissions` | 超级管理员 |
 | PUT | `/api/v1/admin/rbac/users/{userId}/roles` | 超级管理员 |
+| PUT | `/api/v1/admin/rbac/users/{userId}/departments` | 超级管理员 |
+| GET | `/api/v1/admin/rbac/audit` | 超级管理员 |
 | GET | `/api/v1/admin/access-check` | `admin.console.access` |
 
 基础角色为 `USER`、`ADMIN`、`SUPER_ADMIN`。超级管理员固定拥有全部权限，系统禁止移除最后一个超级管理员。
@@ -310,6 +325,9 @@ mvn -f backend/pom.xml spring-boot:run
 | 方法 | 路径 | 说明 |
 | --- | --- | --- |
 | POST | `/api/v1/trips/plan` | 同步生成旅行计划 |
+| GET | `/api/v1/trips` | 查询当前数据范围内可见计划 |
+| GET | `/api/v1/trips/{planId}` | 查询计划详情并校验资源归属 |
+| DELETE | `/api/v1/trips/{planId}` | 删除计划并校验资源归属 |
 | GET | `/api/v1/health` | 统一业务健康检查 |
 | GET | `/actuator/health` | Spring Boot 健康检查 |
 | GET | `/api/v1/demo/hello` | 登录态接口自检 |

@@ -50,7 +50,80 @@ class DatabaseMigrationTest {
 
             try (ResultSet row = statement.executeQuery("SELECT COUNT(*) FROM sys_permission")) {
                 assertTrue(row.next());
-                assertEquals(9, row.getInt(1), "应初始化九个基础权限");
+                assertEquals(15, row.getInt(1), "应初始化九个基础权限和六个权限目录");
+            }
+
+            try (ResultSet row = statement.executeQuery(
+                    "SELECT COUNT(*) FROM sys_permission WHERE built_in = TRUE")) {
+                assertTrue(row.next());
+                assertEquals(15, row.getInt(1), "V6/V7 应将基础权限和目录标记为内置权限");
+            }
+
+            try (ResultSet row = statement.executeQuery("""
+                    SELECT COUNT(*)
+                    FROM sys_permission
+                    WHERE type = 'CATALOG'
+                      AND status = 'ACTIVE'
+                    """)) {
+                assertTrue(row.next());
+                assertEquals(6, row.getInt(1), "V7 应初始化六个权限目录");
+            }
+
+            try (ResultSet row = statement.executeQuery(
+                    "SELECT COUNT(*) FROM sys_permission_package")) {
+                assertTrue(row.next());
+                assertEquals(5, row.getInt(1), "V8 应初始化五个权限包");
+            }
+
+            try (ResultSet row = statement.executeQuery(
+                    "SELECT COUNT(*) FROM sys_permission_package_item")) {
+                assertTrue(row.next());
+                assertEquals(12, row.getInt(1), "V8 应初始化权限包权限项");
+            }
+
+            try (ResultSet row = statement.executeQuery(
+                    "SELECT COUNT(*) FROM sys_permission_dependency")) {
+                assertTrue(row.next());
+                assertEquals(5, row.getInt(1), "V8 应初始化权限依赖");
+            }
+
+            try (ResultSet row = statement.executeQuery(
+                    "SELECT COUNT(*) FROM sys_permission WHERE risk_level = 'HIGH'")) {
+                assertTrue(row.next());
+                assertEquals(2, row.getInt(1), "V8 应标记两个高风险权限");
+            }
+
+            try (ResultSet row = statement.executeQuery(
+                    "SELECT COUNT(*) FROM sys_department WHERE status = 'ACTIVE'")) {
+                assertTrue(row.next());
+                assertEquals(3, row.getInt(1), "V9 应初始化总部、技术部和运营部");
+            }
+
+            try (ResultSet row = statement.executeQuery("""
+                    SELECT code, data_scope
+                    FROM sys_role
+                    WHERE code IN ('USER', 'ADMIN', 'SUPER_ADMIN')
+                    ORDER BY code
+                    """)) {
+                assertTrue(row.next());
+                assertEquals("ADMIN", row.getString("code"));
+                assertEquals("DEPT_AND_CHILD", row.getString("data_scope"));
+                assertTrue(row.next());
+                assertEquals("SUPER_ADMIN", row.getString("code"));
+                assertEquals("ALL", row.getString("data_scope"));
+                assertTrue(row.next());
+                assertEquals("USER", row.getString("code"));
+                assertEquals("SELF", row.getString("data_scope"));
+            }
+
+            try (ResultSet row = statement.executeQuery("""
+                    SELECT COUNT(*)
+                    FROM information_schema.tables
+                    WHERE LOWER(table_schema) = 'public'
+                      AND LOWER(table_name) = 'travel_plan'
+                    """)) {
+                assertTrue(row.next());
+                assertEquals(1, row.getInt(1), "V9 应创建旅行计划资源表");
             }
 
             try (ResultSet row = statement.executeQuery(
@@ -77,6 +150,22 @@ class DatabaseMigrationTest {
                     INSERT INTO user_preferences (user_id, forbidden_list)
                     VALUES (1, '["不购物"]')
                     """);
+
+            statement.executeUpdate("""
+                    INSERT INTO sys_auth_audit_log (
+                        operator_id, operator_name, target_type, target_id,
+                        action, before_value, after_value, client_ip
+                    )
+                    VALUES (1, 'tester', 'ROLE', 1, 'ROLE_PERMISSIONS_UPDATE',
+                            '{"permissionIds":[]}', '{"permissionIds":[1]}', '127.0.0.1')
+                    """);
+
+            try (ResultSet row = statement.executeQuery(
+                    "SELECT COUNT(*) FROM sys_auth_audit_log WHERE action = 'ROLE_PERMISSIONS_UPDATE'")) {
+                assertTrue(row.next());
+                assertEquals(1, row.getInt(1), "V7 应创建授权审计表");
+            }
+
             statement.executeUpdate("DELETE FROM users WHERE id = 1");
 
             try (ResultSet row = statement.executeQuery("SELECT COUNT(*) FROM user_preferences")) {
@@ -148,6 +237,47 @@ class DatabaseMigrationTest {
                      """)) {
             assertTrue(row.next());
             assertEquals(2, row.getInt(1), "旧管理员应同时拥有 ADMIN 与 SUPER_ADMIN");
+        }
+    }
+
+    @Test
+    @DisplayName("V9 将升级前的已有用户归入总部")
+    void departmentMigrationAssignsExistingUsersToHeadquarters() throws Exception {
+        String url = "jdbc:h2:mem:migration_department_test;MODE=MySQL;DB_CLOSE_DELAY=-1";
+        Flyway.configure()
+                .dataSource(url, USER, PASSWORD)
+                .locations("classpath:db/migration")
+                .target("8")
+                .load()
+                .migrate();
+
+        try (Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
+             Statement statement = connection.createStatement()) {
+            statement.executeUpdate("""
+                    INSERT INTO users (username, email, password_hash, nickname)
+                    VALUES ('before_v9', 'before-v9@example.com',
+                            '$2a$10$placeholder', 'before v9')
+                    """);
+        }
+
+        Flyway.configure()
+                .dataSource(url, USER, PASSWORD)
+                .locations("classpath:db/migration")
+                .load()
+                .migrate();
+
+        try (Connection connection = DriverManager.getConnection(url, USER, PASSWORD);
+             Statement statement = connection.createStatement();
+             ResultSet row = statement.executeQuery("""
+                     SELECT COUNT(*)
+                     FROM sys_user_department ud
+                     JOIN sys_department d ON d.id = ud.department_id
+                     JOIN users u ON u.id = ud.user_id
+                     WHERE u.username = 'before_v9'
+                       AND d.code = 'HEADQUARTERS'
+                     """)) {
+            assertTrue(row.next());
+            assertEquals(1, row.getInt(1), "升级前的用户应归属总部");
         }
     }
 }

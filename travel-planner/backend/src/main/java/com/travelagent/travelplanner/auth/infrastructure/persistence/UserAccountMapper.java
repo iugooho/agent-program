@@ -131,6 +131,22 @@ public interface UserAccountMapper {
             @Param("roleCode") String roleCode);
 
     /**
+     * 将新用户归入总部，作为未指定部门时的默认组织归属。
+     *
+     * @param username 登录账号
+     * @return 插入行数
+     */
+    @Insert("""
+            INSERT INTO sys_user_department (user_id, department_id)
+            SELECT u.id, d.id
+            FROM users u
+            JOIN sys_department d ON d.code = 'HEADQUARTERS'
+            WHERE u.username = #{username}
+              AND d.status = 'ACTIVE'
+            """)
+    int assignHeadquartersByUsername(@Param("username") String username);
+
+    /**
      * 创建本地开发账号。
      *
      * @param username 登录账号

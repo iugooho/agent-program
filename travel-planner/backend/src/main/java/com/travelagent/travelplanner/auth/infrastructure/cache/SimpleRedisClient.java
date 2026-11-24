@@ -131,6 +131,16 @@ public class SimpleRedisClient {
     }
 
     /**
+     * 原子递增持久计数器。
+     *
+     * @param key 键
+     * @return 递增后的值
+     */
+    public long increment(String key) {
+        return (Long) execute("INCR", key);
+    }
+
+    /**
      * 删除键。
      *
      * @param key 键

@@ -158,6 +158,44 @@
         }
       }
     },
+    "/api/v1/admin/rbac/users/{userId}/departments" : {
+      "put" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "更新用户所属部门",
+        "operationId" : "updateUserDepartments",
+        "parameters" : [ {
+          "name" : "userId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UserDepartmentsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/rbac/roles/{roleId}" : {
       "put" : {
         "tags" : [ "RBAC 权限管理" ],
@@ -279,6 +317,146 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/RolePermissionsRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rbac/roles/{roleId}/data-scope" : {
+      "put" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "更新角色数据范围",
+        "operationId" : "updateRoleDataScope",
+        "parameters" : [ {
+          "name" : "roleId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RoleDataScopeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rbac/departments/{departmentId}" : {
+      "put" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "更新部门",
+        "operationId" : "updateDepartment",
+        "parameters" : [ {
+          "name" : "departmentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DepartmentUpdateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseRbacDepartmentResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "删除部门",
+        "operationId" : "deleteDepartment",
+        "parameters" : [ {
+          "name" : "departmentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rbac/departments/{departmentId}/members" : {
+      "put" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "更新部门成员",
+        "operationId" : "updateDepartmentMembers",
+        "parameters" : [ {
+          "name" : "departmentId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DepartmentMembersRequest"
               }
             }
           },
@@ -524,6 +702,175 @@
         }
       }
     },
+    "/api/v1/admin/rbac/roles/{roleId}/copy" : {
+      "post" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "复制角色",
+        "operationId" : "copyRole",
+        "parameters" : [ {
+          "name" : "roleId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RoleCopyRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseRbacRoleResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rbac/permissions" : {
+      "post" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "创建自定义权限点",
+        "operationId" : "createPermission",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PermissionCreateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseRbacPermissionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rbac/departments" : {
+      "post" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "创建部门",
+        "operationId" : "createDepartment",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DepartmentCreateRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseRbacDepartmentResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips" : {
+      "get" : {
+        "tags" : [ "旅行规划" ],
+        "summary" : "查询旅行计划列表",
+        "operationId" : "list",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListTravelPlanSummaryResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/trips/{planId}" : {
+      "get" : {
+        "tags" : [ "旅行规划" ],
+        "summary" : "查询旅行计划详情",
+        "operationId" : "detail",
+        "parameters" : [ {
+          "name" : "planId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseSavedTravelPlanResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "旅行规划" ],
+        "summary" : "删除旅行计划",
+        "operationId" : "delete",
+        "parameters" : [ {
+          "name" : "planId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/health" : {
       "get" : {
         "tags" : [ "health-controller" ],
@@ -579,6 +926,35 @@
         }
       }
     },
+    "/api/v1/admin/rbac/audit" : {
+      "get" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "查询授权变更记录",
+        "operationId" : "audit",
+        "parameters" : [ {
+          "name" : "limit",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 50
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListRbacAuditLogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/access-check" : {
       "get" : {
         "tags" : [ "后台权限" ],
@@ -592,6 +968,34 @@
               "*/*" : {
                 "schema" : {
                   "$ref" : "#/components/schemas/ApiResponseAdminAccessResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/rbac/permissions/{permissionId}" : {
+      "delete" : {
+        "tags" : [ "RBAC 权限管理" ],
+        "summary" : "删除自定义权限点",
+        "operationId" : "deletePermission",
+        "parameters" : [ {
+          "name" : "permissionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
                 }
               }
             }
@@ -809,6 +1213,19 @@
         },
         "required" : [ "code", "data", "message" ]
       },
+      "UserDepartmentsRequest" : {
+        "type" : "object",
+        "properties" : {
+          "departmentIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        },
+        "required" : [ "departmentIds" ]
+      },
       "RoleUpdateRequest" : {
         "type" : "object",
         "properties" : {
@@ -873,9 +1290,19 @@
               "type" : "integer",
               "format" : "int64"
             }
+          },
+          "dataScope" : {
+            "type" : "string"
+          },
+          "dataScopeDepartmentIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
           }
         },
-        "required" : [ "builtIn", "code", "description", "id", "name", "permissionIds", "status", "userCount" ]
+        "required" : [ "builtIn", "code", "dataScope", "dataScopeDepartmentIds", "description", "id", "name", "permissionIds", "status", "userCount" ]
       },
       "RoleStatusRequest" : {
         "type" : "object",
@@ -898,9 +1325,124 @@
               "type" : "integer",
               "format" : "int64"
             }
+          },
+          "confirmHighRisk" : {
+            "type" : "boolean"
           }
         },
         "required" : [ "permissionIds" ]
+      },
+      "RoleDataScopeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "dataScope" : {
+            "type" : "string",
+            "minLength" : 1
+          },
+          "departmentIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        },
+        "required" : [ "dataScope", "departmentIds" ]
+      },
+      "DepartmentUpdateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "parentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "leaderUserId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "status" : {
+            "type" : "string",
+            "maxLength" : 20,
+            "minLength" : 0
+          },
+          "sortOrder" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "name" ]
+      },
+      "ApiResponseRbacDepartmentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/RbacDepartmentResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "RbacDepartmentResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "parentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "leaderUserId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "sortOrder" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "memberIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        },
+        "required" : [ "code", "id", "memberIds", "name", "sortOrder", "status" ]
+      },
+      "DepartmentMembersRequest" : {
+        "type" : "object",
+        "properties" : {
+          "userIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          }
+        },
+        "required" : [ "userIds" ]
       },
       "TripPlanRequest" : {
         "type" : "object",
@@ -1064,9 +1606,13 @@
           "mode" : {
             "type" : "string",
             "example" : "deepseek+java"
+          },
+          "savedPlanId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         },
-        "required" : [ "itinerary", "mode", "request" ]
+        "required" : [ "itinerary", "mode", "request", "savedPlanId" ]
       },
       "TripRequestResponse" : {
         "type" : "object",
@@ -1370,6 +1916,281 @@
         },
         "required" : [ "code", "name" ]
       },
+      "RoleCopyRequest" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "example" : "OPERATOR_COPY",
+            "maxLength" : 50,
+            "minLength" : 2,
+            "pattern" : "^[A-Z][A-Z0-9_]*$"
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "description" : {
+            "type" : "string",
+            "maxLength" : 500,
+            "minLength" : 0
+          },
+          "copyPermissions" : {
+            "type" : "boolean"
+          },
+          "copyMembers" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "code", "name" ]
+      },
+      "PermissionCreateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string",
+            "example" : "report.export",
+            "maxLength" : 100,
+            "minLength" : 0,
+            "pattern" : "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "module" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "type" : {
+            "type" : "string",
+            "example" : "BUTTON",
+            "minLength" : 1,
+            "pattern" : "MENU|PAGE|BUTTON|API"
+          },
+          "parentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "routePath" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          },
+          "riskLevel" : {
+            "type" : "string",
+            "example" : "LOW",
+            "pattern" : "LOW|MEDIUM|HIGH"
+          },
+          "description" : {
+            "type" : "string",
+            "maxLength" : 500,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "code", "module", "name", "type" ]
+      },
+      "ApiResponseRbacPermissionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/RbacPermissionResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "RbacPermissionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "parentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "module" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "routePath" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "riskLevel" : {
+            "type" : "string"
+          },
+          "builtIn" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "builtIn", "code", "description", "id", "module", "name", "riskLevel", "status", "type" ]
+      },
+      "DepartmentCreateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "parentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "code" : {
+            "type" : "string",
+            "example" : "PRODUCT",
+            "maxLength" : 50,
+            "minLength" : 0,
+            "pattern" : "^[A-Z][A-Z0-9_]*$"
+          },
+          "name" : {
+            "type" : "string",
+            "maxLength" : 100,
+            "minLength" : 0
+          },
+          "leaderUserId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "sortOrder" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        },
+        "required" : [ "code", "name" ]
+      },
+      "ApiResponseListTravelPlanSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TravelPlanSummaryResponse"
+            }
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "TravelPlanSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "ownerId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "departmentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "destinations" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "startDate" : {
+            "type" : "string",
+            "format" : "date"
+          },
+          "days" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalBudget" : {
+            "type" : "number"
+          },
+          "mode" : {
+            "type" : "string"
+          },
+          "createTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "createTime", "days", "destinations", "id", "mode", "ownerId", "startDate", "title", "totalBudget" ]
+      },
+      "ApiResponseSavedTravelPlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/SavedTravelPlanResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "SavedTravelPlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "ownerId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "departmentId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "request" : {
+            "$ref" : "#/components/schemas/TripRequestResponse"
+          },
+          "itinerary" : {
+            "$ref" : "#/components/schemas/ItineraryResponse"
+          },
+          "mode" : {
+            "type" : "string"
+          },
+          "createTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "createTime", "id", "itinerary", "mode", "ownerId", "request" ]
+      },
       "ApiResponseHealthResponse" : {
         "type" : "object",
         "properties" : {
@@ -1448,6 +2269,24 @@
               "$ref" : "#/components/schemas/RbacPermissionGroupResponse"
             }
           },
+          "permissionPackages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RbacPermissionPackageResponse"
+            }
+          },
+          "permissionDependencies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RbacPermissionDependencyResponse"
+            }
+          },
+          "departments" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RbacDepartmentResponse"
+            }
+          },
           "users" : {
             "type" : "array",
             "items" : {
@@ -1455,7 +2294,21 @@
             }
           }
         },
-        "required" : [ "permissionGroups", "roles", "users" ]
+        "required" : [ "departments", "permissionDependencies", "permissionGroups", "permissionPackages", "roles", "users" ]
+      },
+      "RbacPermissionDependencyResponse" : {
+        "type" : "object",
+        "properties" : {
+          "permissionId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "requiredPermissionId" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "permissionId", "requiredPermissionId" ]
       },
       "RbacPermissionGroupResponse" : {
         "type" : "object",
@@ -1472,7 +2325,7 @@
         },
         "required" : [ "module", "permissions" ]
       },
-      "RbacPermissionResponse" : {
+      "RbacPermissionPackageResponse" : {
         "type" : "object",
         "properties" : {
           "id" : {
@@ -1487,9 +2340,16 @@
           },
           "description" : {
             "type" : "string"
+          },
+          "permissionIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
           }
         },
-        "required" : [ "code", "description", "id", "name" ]
+        "required" : [ "code", "id", "name", "permissionIds" ]
       },
       "RbacUserResponse" : {
         "type" : "object",
@@ -1522,9 +2382,75 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "departmentIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
           }
         },
-        "required" : [ "email", "id", "nickname", "roleCodes", "roleIds", "status", "username" ]
+        "required" : [ "departmentIds", "email", "id", "nickname", "roleCodes", "roleIds", "status", "username" ]
+      },
+      "ApiResponseListRbacAuditLogResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/RbacAuditLogResponse"
+            }
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "RbacAuditLogResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "operatorId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "operatorName" : {
+            "type" : "string"
+          },
+          "targetType" : {
+            "type" : "string"
+          },
+          "targetId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "action" : {
+            "type" : "string"
+          },
+          "beforeValue" : {
+            "type" : "string"
+          },
+          "afterValue" : {
+            "type" : "string"
+          },
+          "clientIp" : {
+            "type" : "string"
+          },
+          "createTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "action", "createTime", "id", "targetType" ]
       },
       "AdminAccessResponse" : {
         "type" : "object",

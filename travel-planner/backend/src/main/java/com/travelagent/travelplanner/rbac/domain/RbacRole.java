@@ -9,6 +9,7 @@ package com.travelagent.travelplanner.rbac.domain;
  * @param description 角色说明
  * @param builtIn 是否为内置角色
  * @param status ACTIVE、DISABLED 或 DELETED
+ * @param dataScope 数据范围
  */
 public record RbacRole(
         long id,
@@ -16,5 +17,6 @@ public record RbacRole(
         String name,
         String description,
         boolean builtIn,
-        String status) {
+        String status,
+        String dataScope) {
 }

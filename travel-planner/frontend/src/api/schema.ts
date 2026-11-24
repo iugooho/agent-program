@@ -39,16 +39,46 @@ export interface ApiResponseHealthResponse {
   data: HealthResponse
 }
 
+export interface ApiResponseListRbacAuditLogResponse {
+  code: number
+  message: string
+  data: RbacAuditLogResponse[]
+}
+
+export interface ApiResponseListTravelPlanSummaryResponse {
+  code: number
+  message: string
+  data: TravelPlanSummaryResponse[]
+}
+
+export interface ApiResponseRbacDepartmentResponse {
+  code: number
+  message: string
+  data: RbacDepartmentResponse
+}
+
 export interface ApiResponseRbacOverviewResponse {
   code: number
   message: string
   data: RbacOverviewResponse
 }
 
+export interface ApiResponseRbacPermissionResponse {
+  code: number
+  message: string
+  data: RbacPermissionResponse
+}
+
 export interface ApiResponseRbacRoleResponse {
   code: number
   message: string
   data: RbacRoleResponse
+}
+
+export interface ApiResponseSavedTravelPlanResponse {
+  code: number
+  message: string
+  data: SavedTravelPlanResponse
 }
 
 export interface ApiResponseString {
@@ -113,6 +143,26 @@ export interface DayPlanResponse {
   notes: string[]
 }
 
+export interface DepartmentCreateRequest {
+  parentId?: number
+  code: string
+  name: string
+  leaderUserId?: number
+  sortOrder?: number
+}
+
+export interface DepartmentMembersRequest {
+  userIds: number[]
+}
+
+export interface DepartmentUpdateRequest {
+  parentId?: number
+  name: string
+  leaderUserId?: number
+  status?: string
+  sortOrder?: number
+}
+
 export interface EmailCodeRequest {
   email: string
   purpose: string
@@ -166,6 +216,17 @@ export interface LoginRequest {
   captchaAnswer?: string
 }
 
+export interface PermissionCreateRequest {
+  code: string
+  name: string
+  module: string
+  type: string
+  parentId?: number
+  routePath?: string
+  riskLevel?: string
+  description?: string
+}
+
 export interface ProfileUpdateRequest {
   nickname?: string
   phone?: string
@@ -176,10 +237,42 @@ export interface ProfileUpdateRequest {
   newEmailCode?: string
 }
 
+export interface RbacAuditLogResponse {
+  id: number
+  operatorId?: number
+  operatorName?: string
+  targetType: string
+  targetId?: number
+  action: string
+  beforeValue?: string
+  afterValue?: string
+  clientIp?: string
+  createTime: string
+}
+
+export interface RbacDepartmentResponse {
+  id: number
+  parentId?: number
+  code: string
+  name: string
+  leaderUserId?: number
+  status: string
+  sortOrder: number
+  memberIds: number[]
+}
+
 export interface RbacOverviewResponse {
   roles: RbacRoleResponse[]
   permissionGroups: RbacPermissionGroupResponse[]
+  permissionPackages: RbacPermissionPackageResponse[]
+  permissionDependencies: RbacPermissionDependencyResponse[]
+  departments: RbacDepartmentResponse[]
   users: RbacUserResponse[]
+}
+
+export interface RbacPermissionDependencyResponse {
+  permissionId: number
+  requiredPermissionId: number
 }
 
 export interface RbacPermissionGroupResponse {
@@ -187,11 +280,26 @@ export interface RbacPermissionGroupResponse {
   permissions: RbacPermissionResponse[]
 }
 
-export interface RbacPermissionResponse {
+export interface RbacPermissionPackageResponse {
   id: number
   code: string
   name: string
+  description?: string
+  permissionIds: number[]
+}
+
+export interface RbacPermissionResponse {
+  id: number
+  parentId?: number
+  code: string
+  name: string
+  module: string
+  type: string
+  routePath?: string
   description: string
+  status: string
+  riskLevel: string
+  builtIn: boolean
 }
 
 export interface RbacRoleResponse {
@@ -203,6 +311,8 @@ export interface RbacRoleResponse {
   status: string
   userCount: number
   permissionIds: number[]
+  dataScope: string
+  dataScopeDepartmentIds: number[]
 }
 
 export interface RbacUserResponse {
@@ -213,6 +323,7 @@ export interface RbacUserResponse {
   status: string
   roleIds: number[]
   roleCodes: string[]
+  departmentIds: number[]
 }
 
 export interface RefreshTokenRequest {
@@ -226,6 +337,14 @@ export interface RegisterRequest {
   emailCode: string
 }
 
+export interface RoleCopyRequest {
+  code: string
+  name: string
+  description?: string
+  copyPermissions?: boolean
+  copyMembers?: boolean
+}
+
 export interface RoleCreateRequest {
   code: string
   name: string
@@ -233,8 +352,14 @@ export interface RoleCreateRequest {
   permissionIds?: number[]
 }
 
+export interface RoleDataScopeRequest {
+  dataScope: string
+  departmentIds: number[]
+}
+
 export interface RolePermissionsRequest {
   permissionIds: number[]
+  confirmHighRisk?: boolean
 }
 
 export interface RoleStatusRequest {
@@ -246,6 +371,29 @@ export interface RoleUpdateRequest {
   description?: string
 }
 
+export interface SavedTravelPlanResponse {
+  id: number
+  ownerId: number
+  departmentId?: number
+  request: TripRequestResponse
+  itinerary: ItineraryResponse
+  mode: string
+  createTime: string
+}
+
+export interface TravelPlanSummaryResponse {
+  id: number
+  ownerId: number
+  departmentId?: number
+  title: string
+  destinations: string[]
+  startDate: string
+  days: number
+  totalBudget: number
+  mode: string
+  createTime: string
+}
+
 export interface TripPlanRequest {
   message: string
 }
@@ -254,6 +402,7 @@ export interface TripPlanResponse {
   request: TripRequestResponse
   itinerary: ItineraryResponse
   mode: string
+  savedPlanId: number
 }
 
 export interface TripRequestResponse {
@@ -268,6 +417,10 @@ export interface TripRequestResponse {
   foodPreferences: string[]
   forbiddenItems: string[]
   accommodationPreferences: string[]
+}
+
+export interface UserDepartmentsRequest {
+  departmentIds: number[]
 }
 
 export interface UserPreferencesRequest {

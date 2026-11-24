@@ -71,6 +71,12 @@ public enum ErrorCode {
     /** 角色当前状态不允许该操作。 */
     ROLE_STATE_INVALID(3002, "角色当前状态不允许该操作", 400),
 
+    /** 权限编码已存在。 */
+    PERMISSION_CODE_EXISTS(3003, "权限编码已存在", 409),
+
+    /** 内置权限不允许删除。 */
+    PERMISSION_PROTECTED(3004, "内置权限不允许删除", 400),
+
     /** 服务器内部错误：未预期的异常，细节只进日志。 */
     INTERNAL_ERROR(500, "内部服务器错误", 500);
 

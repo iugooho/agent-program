@@ -12,6 +12,7 @@ import com.travelagent.travelplanner.rbac.domain.RbacRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -69,6 +70,7 @@ public class UserController {
      * @return 更新后的用户
      */
     @PutMapping("/me")
+    @PreAuthorize("hasAuthority('user.profile.update')")
     @Operation(summary = "更新当前用户资料")
     public ApiResponse<UserResponse> updateProfile(
             @Valid @RequestBody ProfileUpdateRequest request,
@@ -87,6 +89,7 @@ public class UserController {
      * @return 用户长期偏好
      */
     @GetMapping("/me/preferences")
+    @PreAuthorize("hasAuthority('user.profile.read')")
     @Operation(summary = "获取当前用户长期偏好")
     public ApiResponse<UserPreferencesResponse> preferences(Authentication authentication) {
         AuthenticatedUser user = currentUser(authentication);
@@ -102,6 +105,7 @@ public class UserController {
      * @return 更新后的长期偏好
      */
     @PutMapping("/me/preferences")
+    @PreAuthorize("hasAuthority('user.profile.update')")
     @Operation(summary = "更新当前用户长期偏好")
     public ApiResponse<UserPreferencesResponse> updatePreferences(
             @Valid @RequestBody UserPreferencesRequest request,

@@ -4,8 +4,8 @@ import com.travelagent.travelplanner.auth.application.AccessTokenClaims;
 import com.travelagent.travelplanner.auth.application.TokenService;
 import com.travelagent.travelplanner.auth.domain.SessionRevocationStore;
 import com.travelagent.travelplanner.common.error.BusinessException;
+import com.travelagent.travelplanner.rbac.application.RbacAuthorizationCache;
 import com.travelagent.travelplanner.rbac.domain.EffectiveAuthorization;
-import com.travelagent.travelplanner.rbac.domain.RbacRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,22 +31,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
     private final SessionRevocationStore sessionRevocationStore;
-    private final RbacRepository rbacRepository;
+    private final RbacAuthorizationCache authorizationCache;
 
     /**
      * 创建 JWT 过滤器。
      *
      * @param tokenService 令牌服务
      * @param sessionRevocationStore 会话撤销存储
-     * @param rbacRepository RBAC 仓储
+     * @param authorizationCache RBAC 授权缓存
      */
     public JwtAuthenticationFilter(
             TokenService tokenService,
             SessionRevocationStore sessionRevocationStore,
-            RbacRepository rbacRepository) {
+            RbacAuthorizationCache authorizationCache) {
         this.tokenService = tokenService;
         this.sessionRevocationStore = sessionRevocationStore;
-        this.rbacRepository = rbacRepository;
+        this.authorizationCache = authorizationCache;
     }
 
     @Override
@@ -69,7 +69,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return;
             }
             EffectiveAuthorization authorization =
-                    rbacRepository.findEffectiveAuthorization(claims.userId());
+                    authorizationCache.load(claims.userId());
             String primaryRole = primaryRole(authorization.roles());
             AuthenticatedUser principal = new AuthenticatedUser(
                     claims.userId(),

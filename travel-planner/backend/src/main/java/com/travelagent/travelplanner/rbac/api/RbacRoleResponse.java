@@ -14,6 +14,8 @@ import java.util.List;
  * @param status 角色状态
  * @param userCount 已绑定用户数
  * @param permissionIds 已分配权限主键
+ * @param dataScope 数据范围
+ * @param dataScopeDepartmentIds 自定义数据范围部门主键
  */
 public record RbacRoleResponse(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) long id,
@@ -23,5 +25,8 @@ public record RbacRoleResponse(
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) boolean builtIn,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String status,
         @Schema(requiredMode = Schema.RequiredMode.REQUIRED) int userCount,
-        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Long> permissionIds) {
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Long> permissionIds,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) String dataScope,
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+        List<Long> dataScopeDepartmentIds) {
 }

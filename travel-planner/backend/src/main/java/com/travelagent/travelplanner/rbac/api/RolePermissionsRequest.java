@@ -8,8 +8,10 @@ import java.util.List;
  * 更新角色权限请求。
  *
  * @param permissionIds 权限主键
+ * @param confirmHighRisk 是否确认新增高风险权限
  */
 public record RolePermissionsRequest(
         @NotNull
-        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Long> permissionIds) {
+        @Schema(requiredMode = Schema.RequiredMode.REQUIRED) List<Long> permissionIds,
+        Boolean confirmHighRisk) {
 }

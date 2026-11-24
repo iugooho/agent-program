@@ -45,7 +45,9 @@ onBeforeUnmount(() => {
     <nav>
       <RouterLink to="/"> 首页 </RouterLink>
       <RouterLink to="/trips"> 智能规划 </RouterLink>
-      <RouterLink v-if="auth.authenticated" to="/profile"> 个人中心 </RouterLink>
+      <RouterLink v-if="auth.authenticated && auth.can('user.profile.read')" to="/profile">
+        个人中心
+      </RouterLink>
       <RouterLink to="/dashboard"> 数据大屏 </RouterLink>
       <RouterLink v-if="auth.can('admin.console.access')" to="/admin/access"> 权限验证 </RouterLink>
       <RouterLink v-if="auth.can('admin.rbac.manage')" to="/admin/rbac"> 权限分配 </RouterLink>

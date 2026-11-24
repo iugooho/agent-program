@@ -1,19 +1,25 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 
-import { planTrip } from '@/api/trips'
+import { fetchTripPlans, planTrip } from '@/api/trips'
 import TripPlannerView from '@/views/TripPlannerView.vue'
 
 vi.mock('@/api/trips', () => ({
-  planTrip: vi.fn()
+  planTrip: vi.fn(),
+  fetchTripPlans: vi.fn(),
+  fetchTripPlan: vi.fn(),
+  deleteTripPlan: vi.fn()
 }))
 
 const mockedPlanTrip = vi.mocked(planTrip)
+const mockedFetchTripPlans = vi.mocked(fetchTripPlans)
 
 describe('TripPlannerView', () => {
   it('提交需求后展示结构化行程', async () => {
+    mockedFetchTripPlans.mockResolvedValue([])
     mockedPlanTrip.mockResolvedValue({
       mode: 'deepseek+java',
+      savedPlanId: 12,
       request: {
         departureCity: '北京',
         destinations: ['杭州'],
@@ -70,5 +76,6 @@ describe('TripPlannerView', () => {
     expect(wrapper.text()).toContain('杭州 1 日旅行计划')
     expect(wrapper.text()).toContain('西湖')
     expect(wrapper.text()).toContain('deepseek+java')
+    expect(wrapper.text()).toContain('已保存为计划 #12')
   })
 })

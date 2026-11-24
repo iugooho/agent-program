@@ -2,6 +2,7 @@ package com.travelagent.travelplanner.support;
 
 import com.travelagent.travelplanner.auth.application.TokenService;
 import com.travelagent.travelplanner.auth.domain.SessionRevocationStore;
+import com.travelagent.travelplanner.rbac.application.RbacAuthorizationCache;
 import com.travelagent.travelplanner.rbac.domain.RbacRepository;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -16,4 +17,7 @@ public abstract class WebMvcSecurityTestSupport {
 
     @MockitoBean
     protected RbacRepository rbacRepository;
+
+    @MockitoBean
+    protected RbacAuthorizationCache rbacAuthorizationCache;
 }
