@@ -34,6 +34,8 @@ describe('AdminAccessView', () => {
       email: 'admin@example.com',
       nickname: '本地管理员',
       phone: '',
+      avatarUrl: '',
+      bio: '',
       role: 'SUPER_ADMIN',
       roles: ['ADMIN', 'SUPER_ADMIN'],
       permissions: [
@@ -43,7 +45,8 @@ describe('AdminAccessView', () => {
         'admin.user.read'
       ],
       status: 'ACTIVE',
-      createTime: '2026-11-10T00:00:00'
+      createTime: '2026-11-10T00:00:00',
+      lastLoginTime: '2026-11-24T08:30:00'
     }
   })
 

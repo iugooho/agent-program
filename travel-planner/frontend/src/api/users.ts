@@ -2,13 +2,28 @@ import axios from 'axios'
 
 import { http } from '@/api/http'
 import type {
+  ApiResponseUserOverviewResponse,
   ApiResponseUserPreferencesResponse,
   ApiResponseUserResponse,
   ProfileUpdateRequest,
+  UserOverviewResponse,
   UserPreferencesRequest,
   UserPreferencesResponse,
   UserResponse
 } from '@/api/schema'
+
+/** 获取当前用户个人中心概览。 */
+export async function fetchProfileOverview(): Promise<UserOverviewResponse> {
+  try {
+    const response = await http.get<ApiResponseUserOverviewResponse>('/v1/users/me/overview')
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message)
+    }
+    return response.data.data
+  } catch (error: unknown) {
+    throw readableError(error, '个人中心概览加载失败')
+  }
+}
 
 /** 更新当前用户资料。 */
 export async function updateCurrentUser(request: ProfileUpdateRequest): Promise<UserResponse> {
@@ -20,6 +35,21 @@ export async function updateCurrentUser(request: ProfileUpdateRequest): Promise<
     return response.data.data
   } catch (error: unknown) {
     throw readableError(error, '用户资料更新失败')
+  }
+}
+
+/** 上传当前用户头像，由后端统一裁切和压缩。 */
+export async function uploadAvatar(file: File): Promise<UserResponse> {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await http.post<ApiResponseUserResponse>('/v1/users/me/avatar', formData)
+    if (response.data.code !== 0) {
+      throw new Error(response.data.message)
+    }
+    return response.data.data
+  } catch (error: unknown) {
+    throw readableError(error, '头像上传失败')
   }
 }
 

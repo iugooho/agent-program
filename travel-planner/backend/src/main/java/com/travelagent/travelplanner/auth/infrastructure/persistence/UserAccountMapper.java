@@ -18,7 +18,8 @@ public interface UserAccountMapper {
      */
     @Select("""
             SELECT id, username, email, password_hash AS passwordHash, status,
-                   nickname, phone, create_time AS createTime, last_login_time AS lastLoginTime
+                   nickname, phone, avatar_url AS avatarUrl, bio,
+                   create_time AS createTime, last_login_time AS lastLoginTime
             FROM users
             WHERE username = #{username}
             LIMIT 1
@@ -33,7 +34,8 @@ public interface UserAccountMapper {
      */
     @Select("""
             SELECT id, username, email, password_hash AS passwordHash, status,
-                   nickname, phone, create_time AS createTime, last_login_time AS lastLoginTime
+                   nickname, phone, avatar_url AS avatarUrl, bio,
+                   create_time AS createTime, last_login_time AS lastLoginTime
             FROM users
             WHERE email = #{email}
             LIMIT 1
@@ -48,7 +50,8 @@ public interface UserAccountMapper {
      */
     @Select("""
             SELECT id, username, email, password_hash AS passwordHash, status,
-                   nickname, phone, create_time AS createTime, last_login_time AS lastLoginTime
+                   nickname, phone, avatar_url AS avatarUrl, bio,
+                   create_time AS createTime, last_login_time AS lastLoginTime
             FROM users
             WHERE id = #{id}
             LIMIT 1
@@ -64,6 +67,7 @@ public interface UserAccountMapper {
      * @param passwordHash 密码哈希
      * @param nickname 昵称
      * @param phone 联系电话
+     * @param bio 个人简介
      * @return 更新行数
      */
     @Update("""
@@ -73,6 +77,7 @@ public interface UserAccountMapper {
                 password_hash = #{passwordHash},
                 nickname = #{nickname},
                 phone = #{phone},
+                bio = #{bio},
                 update_time = CURRENT_TIMESTAMP(6)
             WHERE id = #{id}
             """)
@@ -82,7 +87,53 @@ public interface UserAccountMapper {
             @Param("email") String email,
             @Param("passwordHash") String passwordHash,
             @Param("nickname") String nickname,
-            @Param("phone") String phone);
+            @Param("phone") String phone,
+            @Param("bio") String bio);
+
+    /**
+     * 更新头像地址。
+     *
+     * @param id 用户主键
+     * @param avatarUrl 头像访问地址
+     * @return 更新行数
+     */
+    @Update("""
+            UPDATE users
+            SET avatar_url = #{avatarUrl},
+                update_time = CURRENT_TIMESTAMP(6)
+            WHERE id = #{id}
+            """)
+    int updateAvatarUrl(
+            @Param("id") long id,
+            @Param("avatarUrl") String avatarUrl);
+
+    /**
+     * 脱敏并软删除用户。
+     *
+     * @param id 用户主键
+     * @param username 脱敏账号
+     * @param email 脱敏邮箱
+     * @param passwordHash 随机失效密码哈希
+     * @return 更新行数
+     */
+    @Update("""
+            UPDATE users
+            SET username = #{username},
+                email = #{email},
+                password_hash = #{passwordHash},
+                status = 'DELETED',
+                nickname = NULL,
+                phone = NULL,
+                avatar_url = NULL,
+                bio = NULL,
+                update_time = CURRENT_TIMESTAMP(6)
+            WHERE id = #{id}
+            """)
+    int softDelete(
+            @Param("id") long id,
+            @Param("username") String username,
+            @Param("email") String email,
+            @Param("passwordHash") String passwordHash);
 
     /**
      * 更新最近登录时间。

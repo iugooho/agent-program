@@ -79,6 +79,8 @@ class BootstrapAdminInitializerTest {
                 "ACTIVE",
                 "Docker 管理员",
                 null,
+                null,
+                null,
                 LocalDateTime.now(),
                 null);
     }

@@ -41,6 +41,14 @@ public interface TravelPlanRepository {
             Set<Long> departmentIds);
 
     /**
+     * 查询用户本人创建的计划。
+     *
+     * @param ownerId 所有者主键
+     * @return 旅行计划
+     */
+    List<SavedTravelPlan> findByOwner(long ownerId);
+
+    /**
      * 按主键查询计划。
      *
      * @param planId 计划主键

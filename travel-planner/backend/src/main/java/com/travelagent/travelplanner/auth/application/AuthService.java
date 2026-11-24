@@ -34,6 +34,7 @@ public class AuthService {
     private final CaptchaService captchaService;
     private final RiskControlService riskControlService;
     private final RateLimitService rateLimitService;
+    private final AccountSecurityService accountSecurityService;
 
     /**
      * 创建认证服务。
@@ -48,6 +49,7 @@ public class AuthService {
      * @param captchaService 人机验证服务
      * @param riskControlService 登录风控服务
      * @param rateLimitService 限流服务
+     * @param accountSecurityService 账号安全服务
      */
     public AuthService(
             UserRepository userRepository,
@@ -59,7 +61,8 @@ public class AuthService {
             AuthProperties authProperties,
             CaptchaService captchaService,
             RiskControlService riskControlService,
-            RateLimitService rateLimitService) {
+            RateLimitService rateLimitService,
+            AccountSecurityService accountSecurityService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.tokenService = tokenService;
@@ -70,6 +73,7 @@ public class AuthService {
         this.captchaService = captchaService;
         this.riskControlService = riskControlService;
         this.rateLimitService = rateLimitService;
+        this.accountSecurityService = accountSecurityService;
     }
 
     /**
@@ -79,10 +83,16 @@ public class AuthService {
      * @param password 明文密码
      * @param email 绑定邮箱
      * @param emailCode REGISTER 用途验证码
+     * @param context 客户端信息
      * @return 令牌对
      */
     @Transactional
-    public AuthToken register(String username, String password, String email, String emailCode) {
+    public AuthToken register(
+            String username,
+            String password,
+            String email,
+            String emailCode,
+            ClientContext context) {
         requireText(username, "username");
         requireText(password, "password");
         requireText(email, "email");
@@ -114,7 +124,9 @@ public class AuthService {
         UserAccount user = userRepository.findByUsername(normalizedUsername)
                 .orElseThrow(() -> new IllegalStateException("注册用户写入后未能查询到"));
         userRepository.updateLastLoginTime(user.id());
-        return tokenService.issue(user);
+        AuthToken token = tokenService.issue(user);
+        accountSecurityService.openSession(token, context);
+        return token;
     }
 
     /**
@@ -125,6 +137,7 @@ public class AuthService {
      * @param clientKey 客户端绑定信息
      * @param captchaChallengeId 登录 CAPTCHA 挑战
      * @param captchaAnswer 登录 CAPTCHA 答案
+     * @param context 客户端信息
      * @return 令牌对
      */
     @Transactional
@@ -133,7 +146,8 @@ public class AuthService {
             String password,
             String clientKey,
             String captchaChallengeId,
-            String captchaAnswer) {
+            String captchaAnswer,
+            ClientContext context) {
         requireText(username, "username");
         requireText(password, "password");
         String normalizedUsername = username.strip();
@@ -152,7 +166,9 @@ public class AuthService {
         requireActive(user);
         riskControlService.clearFailures(normalizedUsername, clientKey);
         userRepository.updateLastLoginTime(user.id());
-        return tokenService.issue(user);
+        AuthToken token = tokenService.issue(user);
+        accountSecurityService.openSession(token, context);
+        return token;
     }
 
     /**
@@ -160,10 +176,11 @@ public class AuthService {
      *
      * @param email 登录邮箱
      * @param emailCode 邮箱验证码
+     * @param context 客户端信息
      * @return 令牌对
      */
     @Transactional
-    public AuthToken loginWithEmailCode(String email, String emailCode) {
+    public AuthToken loginWithEmailCode(String email, String emailCode, ClientContext context) {
         requireText(email, "email");
         requireText(emailCode, "emailCode");
         String normalizedEmail = normalizeEmail(email);
@@ -178,16 +195,20 @@ public class AuthService {
         }
         requireActive(user);
         userRepository.updateLastLoginTime(user.id());
-        return tokenService.issue(user);
+        AuthToken token = tokenService.issue(user);
+        accountSecurityService.openSession(token, context);
+        return token;
     }
 
     /**
      * 刷新令牌。
      *
      * @param refreshToken Refresh Token
+     * @param context 客户端信息
      * @return 新令牌对
      */
-    public AuthToken refresh(String refreshToken) {
+    @Transactional
+    public AuthToken refresh(String refreshToken, ClientContext context) {
         requireText(refreshToken, "refreshToken");
         RefreshTokenClaims claims = tokenService.validateRefreshToken(refreshToken);
         if (sessionRevocationStore.isRevoked(claims.sessionId())) {
@@ -196,17 +217,21 @@ public class AuthService {
         UserAccount user = userRepository.findById(claims.userId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.REFRESH_TOKEN_INVALID));
         requireActive(user);
-        return tokenService.issue(user);
+        AuthToken token = tokenService.issue(user, claims.sessionId());
+        accountSecurityService.touchSession(token, context);
+        return token;
     }
 
     /**
      * 撤销当前登录会话。
      *
+     * @param userId 用户主键
      * @param sessionId 会话标识
+     * @param context 客户端信息
      */
-    public void logout(String sessionId) {
+    public void logout(long userId, String sessionId, ClientContext context) {
         requireText(sessionId, "sessionId");
-        sessionRevocationStore.revoke(sessionId, tokenService.refreshTokenLifetime());
+        accountSecurityService.logout(userId, sessionId, context);
     }
 
     /**

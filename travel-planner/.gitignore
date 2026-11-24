@@ -1,6 +1,7 @@
 # 后端
 backend/target/
 backend/*.log
+backend/uploads/
 
 # 前端
 frontend/node_modules/

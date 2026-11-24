@@ -42,8 +42,23 @@ public class MyBatisUserRepository implements UserRepository {
             String email,
             String passwordHash,
             String nickname,
-            String phone) {
-        mapper.updateProfile(userId, username, email, passwordHash, nickname, phone);
+            String phone,
+            String bio) {
+        mapper.updateProfile(userId, username, email, passwordHash, nickname, phone, bio);
+    }
+
+    @Override
+    public void updateAvatarUrl(long userId, String avatarUrl) {
+        mapper.updateAvatarUrl(userId, avatarUrl);
+    }
+
+    @Override
+    public void softDelete(
+            long userId,
+            String anonymousUsername,
+            String anonymousEmail,
+            String passwordHash) {
+        mapper.softDelete(userId, anonymousUsername, anonymousEmail, passwordHash);
     }
 
     @Override
@@ -81,6 +96,8 @@ public class MyBatisUserRepository implements UserRepository {
                 row.status(),
                 row.nickname(),
                 row.phone(),
+                row.avatarUrl(),
+                row.bio(),
                 row.createTime(),
                 row.lastLoginTime());
     }

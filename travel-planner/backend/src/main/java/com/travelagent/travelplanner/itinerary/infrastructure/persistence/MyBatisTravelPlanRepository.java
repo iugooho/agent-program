@@ -68,6 +68,13 @@ public class MyBatisTravelPlanRepository implements TravelPlanRepository {
     }
 
     @Override
+    public List<SavedTravelPlan> findByOwner(long ownerId) {
+        return mapper.findByOwner(ownerId).stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
     public Optional<SavedTravelPlan> findById(long planId) {
         return Optional.ofNullable(mapper.findById(planId)).map(this::toDomain);
     }

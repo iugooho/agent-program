@@ -65,16 +65,27 @@ public class JwtTokenService implements TokenService {
 
     @Override
     public AuthToken issue(UserAccount user) {
+        return issue(user, UUID.randomUUID().toString());
+    }
+
+    @Override
+    public AuthToken issue(UserAccount user, String sessionId) {
         Instant issuedAt = Instant.now();
         Instant accessExpiresAt = issuedAt.plus(properties.accessTtl());
         Instant refreshExpiresAt = issuedAt.plus(properties.refreshTtl());
-        String sessionId = UUID.randomUUID().toString();
 
         Map<String, Object> accessClaims = baseClaims(user, sessionId, TOKEN_TYPE_ACCESS, issuedAt, accessExpiresAt);
         Map<String, Object> refreshClaims = baseClaims(user, sessionId, TOKEN_TYPE_REFRESH, issuedAt, refreshExpiresAt);
         String accessToken = createToken(accessClaims);
         String refreshToken = createToken(refreshClaims);
-        return new AuthToken(accessToken, refreshToken, "Bearer", properties.accessTtl().toSeconds());
+        return new AuthToken(
+                accessToken,
+                refreshToken,
+                "Bearer",
+                properties.accessTtl().toSeconds(),
+                user.id(),
+                sessionId,
+                refreshExpiresAt);
     }
 
     @Override

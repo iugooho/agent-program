@@ -19,6 +19,7 @@ import com.travelagent.travelplanner.auth.domain.UserRepository;
 import com.travelagent.travelplanner.common.error.BusinessException;
 import com.travelagent.travelplanner.common.error.ErrorCode;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,7 @@ class AuthServiceTest {
     private CaptchaService captchaService;
     private RiskControlService riskControlService;
     private RateLimitService rateLimitService;
+    private AccountSecurityService accountSecurityService;
     private AuthService authService;
 
     @BeforeEach
@@ -51,6 +53,7 @@ class AuthServiceTest {
         captchaService = mock(CaptchaService.class);
         riskControlService = mock(RiskControlService.class);
         rateLimitService = mock(RateLimitService.class);
+        accountSecurityService = mock(AccountSecurityService.class);
         AuthProperties properties = new AuthProperties(
                 new AuthProperties.Jwt("secret-value", "travel-planner", Duration.ofMinutes(15), Duration.ofDays(7)),
                 new AuthProperties.EmailCode(Duration.ofMinutes(5), Duration.ofSeconds(60)),
@@ -72,23 +75,26 @@ class AuthServiceTest {
                 properties,
                 captchaService,
                 riskControlService,
-                rateLimitService);
+                rateLimitService,
+                accountSecurityService);
     }
 
     @Test
     @DisplayName("账号密码正确时更新登录时间并签发令牌")
     void passwordLoginIssuesToken() {
         UserAccount user = user("ACTIVE");
-        AuthToken token = new AuthToken("access", "refresh", "Bearer", 900);
+        AuthToken token = token(user.id(), "session-1");
+        ClientContext context = new ClientContext("127.0.0.1", "JUnit");
         when(userRepository.findByUsername("demo")).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("Demo123456", user.passwordHash())).thenReturn(true);
         when(tokenService.issue(user)).thenReturn(token);
 
         AuthToken result = authService.loginWithPassword(
-                "demo", "Demo123456", "client-key", null, null);
+                "demo", "Demo123456", "client-key", null, null, context);
 
         assertEquals(token, result);
         verify(userRepository).updateLastLoginTime(user.id());
+        verify(accountSecurityService).openSession(token, context);
     }
 
     @Test
@@ -100,7 +106,7 @@ class AuthServiceTest {
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> authService.loginWithPassword(
-                        "demo", "bad-password", "client-key", null, null));
+                        "demo", "bad-password", "client-key", null, null, context()));
 
         assertEquals(ErrorCode.BAD_CREDENTIALS, exception.errorCode());
         verify(riskControlService).recordFailure("demo", "client-key");
@@ -115,7 +121,7 @@ class AuthServiceTest {
 
         BusinessException exception = assertThrows(BusinessException.class,
                 () -> authService.loginWithPassword(
-                        "demo", "Demo123456", "client-key", null, null));
+                        "demo", "Demo123456", "client-key", null, null, context()));
 
         assertEquals(ErrorCode.ACCOUNT_DISABLED, exception.errorCode());
     }
@@ -124,7 +130,7 @@ class AuthServiceTest {
     @DisplayName("注册消费 REGISTER 验证码、哈希密码并签发令牌")
     void registerCreatesUserAndIssuesToken() {
         UserAccount registered = user(2L, "new_user", "new@example.com", "encoded-password", "ACTIVE");
-        AuthToken token = new AuthToken("access", "refresh", "Bearer", 900);
+        AuthToken token = token(registered.id(), "session-2");
         when(userRepository.findByUsername("new_user"))
                 .thenReturn(Optional.empty())
                 .thenReturn(Optional.of(registered));
@@ -133,7 +139,12 @@ class AuthServiceTest {
         when(passwordEncoder.encode("Password123")).thenReturn("encoded-password");
         when(tokenService.issue(registered)).thenReturn(token);
 
-        AuthToken result = authService.register(" new_user ", "Password123", " NEW@example.com ", "123456");
+        AuthToken result = authService.register(
+                " new_user ",
+                "Password123",
+                " NEW@example.com ",
+                "123456",
+                context());
 
         assertEquals(token, result);
         verify(emailCodeStore).consumeCode(anyString(), any(EmailPurpose.class), anyString());
@@ -147,7 +158,8 @@ class AuthServiceTest {
         when(userRepository.findByUsername("demo")).thenReturn(Optional.of(user("ACTIVE")));
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> authService.register("demo", "Password123", "new@example.com", "123456"));
+                () -> authService.register(
+                        "demo", "Password123", "new@example.com", "123456", context()));
 
         assertEquals(ErrorCode.ACCOUNT_EXISTS, exception.errorCode());
         verify(emailCodeStore, never()).consumeCode(anyString(), any(EmailPurpose.class), anyString());
@@ -160,7 +172,8 @@ class AuthServiceTest {
         when(userRepository.findByEmail("demo@example.com")).thenReturn(Optional.of(user("ACTIVE")));
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> authService.register("new_user", "Password123", "DEMO@example.com", "123456"));
+                () -> authService.register(
+                        "new_user", "Password123", "DEMO@example.com", "123456", context()));
 
         assertEquals(ErrorCode.EMAIL_EXISTS, exception.errorCode());
     }
@@ -173,7 +186,8 @@ class AuthServiceTest {
         when(emailCodeStore.consumeCode(anyString(), any(EmailPurpose.class), anyString())).thenReturn(false);
 
         BusinessException exception = assertThrows(BusinessException.class,
-                () -> authService.register("new_user", "Password123", "new@example.com", "123456"));
+                () -> authService.register(
+                        "new_user", "Password123", "new@example.com", "123456", context()));
 
         assertEquals(ErrorCode.EMAIL_CODE_INVALID, exception.errorCode());
         verify(userRepository, never()).createUser(anyString(), anyString(), anyString(), anyString());
@@ -183,14 +197,35 @@ class AuthServiceTest {
     @DisplayName("邮箱验证码正确时可以登录")
     void emailCodeLoginIssuesToken() {
         UserAccount user = user("ACTIVE");
-        AuthToken token = new AuthToken("access", "refresh", "Bearer", 900);
+        AuthToken token = token(user.id(), "session-3");
         when(userRepository.findByEmail("demo@example.com")).thenReturn(Optional.of(user));
         when(emailCodeStore.consumeCode(anyString(), any(EmailPurpose.class), anyString())).thenReturn(true);
         when(tokenService.issue(user)).thenReturn(token);
 
-        AuthToken result = authService.loginWithEmailCode("demo@example.com", "123456");
+        AuthToken result = authService.loginWithEmailCode("demo@example.com", "123456", context());
 
         assertEquals(token, result);
+    }
+
+    @Test
+    @DisplayName("刷新令牌沿用原会话标识并更新活跃时间")
+    void refreshKeepsSessionId() {
+        UserAccount user = user("ACTIVE");
+        AuthToken token = token(user.id(), "session-refresh");
+        when(tokenService.validateRefreshToken("refresh-token")).thenReturn(
+                new RefreshTokenClaims(
+                        user.id(),
+                        "session-refresh",
+                        "token-id",
+                        Instant.now().plusSeconds(3600)));
+        when(sessionRevocationStore.isRevoked("session-refresh")).thenReturn(false);
+        when(userRepository.findById(user.id())).thenReturn(Optional.of(user));
+        when(tokenService.issue(user, "session-refresh")).thenReturn(token);
+
+        AuthToken result = authService.refresh("refresh-token", context());
+
+        assertEquals(token, result);
+        verify(accountSecurityService).touchSession(token, context());
     }
 
     @Test
@@ -277,7 +312,24 @@ class AuthServiceTest {
                 status,
                 username,
                 null,
+                null,
+                null,
                 LocalDateTime.now(),
                 null);
+    }
+
+    private AuthToken token(long userId, String sessionId) {
+        return new AuthToken(
+                "access",
+                "refresh",
+                "Bearer",
+                900,
+                userId,
+                sessionId,
+                Instant.now().plusSeconds(604800));
+    }
+
+    private ClientContext context() {
+        return new ClientContext("127.0.0.1", "JUnit");
     }
 }

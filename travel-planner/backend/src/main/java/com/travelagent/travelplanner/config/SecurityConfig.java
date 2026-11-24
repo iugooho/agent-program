@@ -61,6 +61,7 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/error")
                         .permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/avatars/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAuthority("admin.console.access")
                         .requestMatchers(HttpMethod.POST,
                                 "/api/v1/auth/register",

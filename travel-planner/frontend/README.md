@@ -26,7 +26,7 @@ Windows 下也可以直接双击 `scripts\dev.cmd`。
 | `/` | 首页 |
 | `/trips` | 智能旅行规划 |
 | `/dashboard` | 数据看板 |
-| `/profile` | 个人资料、安全设置和长期偏好 |
+| `/profile` | 个人资料、长期偏好、登录设备、安全日志、通知设置、数据导出和账号注销 |
 | `/admin/access` | 后台权限校验 |
 | `/admin/rbac` | 超级管理员角色与权限分配 |
 | `/login`、`/register` | 登录和注册 |

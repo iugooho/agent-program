@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: travel-planner-backend
+  servlet:
+    multipart:
+      max-file-size: 3MB
+      max-request-size: 3MB
   http:
     client:
       connect-timeout: 10s
@@ -28,6 +32,8 @@ spring:
         temperature: 0.1
 
 app:
+  profile:
+    avatar-dir: ${APP_PROFILE_AVATAR_DIR:uploads/avatars}
   bootstrap-admin:
     enabled: ${APP_BOOTSTRAP_ADMIN_ENABLED:false}
     username: ${APP_BOOTSTRAP_ADMIN_USERNAME:admin}

@@ -2,6 +2,10 @@
  * 本文件由 scripts/gen-api-types.mjs 从 docs/openapi.json 自动生成，请勿手动修改。
  * 重新生成：npm run gen:api
  */
+export interface AccountDeletionRequest {
+  verificationCode: string
+}
+
 export interface AdminAccessResponse {
   username: string
   role: string
@@ -45,10 +49,28 @@ export interface ApiResponseListRbacAuditLogResponse {
   data: RbacAuditLogResponse[]
 }
 
+export interface ApiResponseListSecurityEventResponse {
+  code: number
+  message: string
+  data: SecurityEventResponse[]
+}
+
 export interface ApiResponseListTravelPlanSummaryResponse {
   code: number
   message: string
   data: TravelPlanSummaryResponse[]
+}
+
+export interface ApiResponseListUserSessionResponse {
+  code: number
+  message: string
+  data: UserSessionResponse[]
+}
+
+export interface ApiResponseNotificationPreferencesResponse {
+  code: number
+  message: string
+  data: NotificationPreferencesResponse
 }
 
 export interface ApiResponseRbacDepartmentResponse {
@@ -91,6 +113,18 @@ export interface ApiResponseTripPlanResponse {
   code: number
   message: string
   data: TripPlanResponse
+}
+
+export interface ApiResponseUserDataExportResponse {
+  code: number
+  message: string
+  data: UserDataExportResponse
+}
+
+export interface ApiResponseUserOverviewResponse {
+  code: number
+  message: string
+  data: UserOverviewResponse
 }
 
 export interface ApiResponseUserPreferencesResponse {
@@ -216,6 +250,21 @@ export interface LoginRequest {
   captchaAnswer?: string
 }
 
+export interface NotificationPreferencesRequest {
+  tripReminder?: boolean
+  tripChange?: boolean
+  systemMessage?: boolean
+  emailEnabled?: boolean
+}
+
+export interface NotificationPreferencesResponse {
+  tripReminder: boolean
+  tripChange: boolean
+  systemMessage: boolean
+  emailEnabled: boolean
+  updateTime?: string
+}
+
 export interface PermissionCreateRequest {
   code: string
   name: string
@@ -230,6 +279,7 @@ export interface PermissionCreateRequest {
 export interface ProfileUpdateRequest {
   nickname?: string
   phone?: string
+  bio?: string
   newUsername?: string
   newPassword?: string
   newEmail?: string
@@ -381,6 +431,15 @@ export interface SavedTravelPlanResponse {
   createTime: string
 }
 
+export interface SecurityEventResponse {
+  id: number
+  eventType: string
+  description: string
+  clientIp?: string
+  userAgent?: string
+  createTime: string
+}
+
 export interface TravelPlanSummaryResponse {
   id: number
   ownerId: number
@@ -419,8 +478,24 @@ export interface TripRequestResponse {
   accommodationPreferences: string[]
 }
 
+export interface UserDataExportResponse {
+  profile: UserResponse
+  preferences: UserPreferencesResponse
+  notificationPreferences: NotificationPreferencesResponse
+  trips: SavedTravelPlanResponse[]
+}
+
 export interface UserDepartmentsRequest {
   departmentIds: number[]
+}
+
+export interface UserOverviewResponse {
+  totalTrips: number
+  upcomingTrips: number
+  cities: number
+  totalDays: number
+  nextTrip?: TravelPlanSummaryResponse
+  recentTrips: TravelPlanSummaryResponse[]
 }
 
 export interface UserPreferencesRequest {
@@ -446,13 +521,26 @@ export interface UserResponse {
   email: string
   nickname: string
   phone: string
+  avatarUrl: string
+  bio: string
   role: string
   roles: string[]
   permissions: string[]
   status: string
   createTime: string
+  lastLoginTime: string
 }
 
 export interface UserRolesRequest {
   roleIds: number[]
+}
+
+export interface UserSessionResponse {
+  sessionId: string
+  clientIp?: string
+  userAgent?: string
+  createTime: string
+  lastSeenTime: string
+  expiresAt: string
+  current: boolean
 }

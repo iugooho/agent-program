@@ -79,6 +79,23 @@ public interface TravelPlanMapper {
             @Param("departmentIds") Set<Long> departmentIds);
 
     /**
+     * 查询用户本人创建的计划。
+     *
+     * @param ownerId 所有者主键
+     * @return 计划行
+     */
+    @Select("""
+            SELECT id, owner_id AS ownerId, department_id AS departmentId,
+                   request_payload AS requestPayload,
+                   itinerary_payload AS itineraryPayload,
+                   mode, create_time AS createTime
+            FROM travel_plan
+            WHERE owner_id = #{ownerId}
+            ORDER BY create_time DESC, id DESC
+            """)
+    List<TravelPlanRow> findByOwner(@Param("ownerId") long ownerId);
+
+    /**
      * 按主键查询计划。
      *
      * @param planId 计划主键

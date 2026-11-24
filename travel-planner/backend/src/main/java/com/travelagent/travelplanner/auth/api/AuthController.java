@@ -2,6 +2,7 @@ package com.travelagent.travelplanner.auth.api;
 
 import com.travelagent.travelplanner.api.ApiResponse;
 import com.travelagent.travelplanner.auth.application.AuthService;
+import com.travelagent.travelplanner.auth.application.ClientContext;
 import com.travelagent.travelplanner.auth.config.AuthProperties;
 import com.travelagent.travelplanner.auth.infrastructure.security.AuthenticatedUser;
 import com.travelagent.travelplanner.auth.infrastructure.security.RequestIdentity;
@@ -42,16 +43,20 @@ public class AuthController {
      * 注册新用户。
      *
      * @param request 注册请求
+     * @param httpRequest HTTP 请求
      * @return JWT 令牌对
      */
     @PostMapping("/register")
     @Operation(summary = "用户注册", description = "使用独立账号、密码和 REGISTER 用途邮箱验证码注册")
-    public ApiResponse<AuthTokenResponse> register(@Valid @RequestBody RegisterRequest request) {
+    public ApiResponse<AuthTokenResponse> register(
+            @Valid @RequestBody RegisterRequest request,
+            HttpServletRequest httpRequest) {
         return ApiResponse.ok(AuthTokenResponse.from(authService.register(
                 request.username(),
                 request.password(),
                 request.email(),
-                request.emailCode())));
+                request.emailCode(),
+                clientContext(httpRequest))));
     }
 
     /**
@@ -73,9 +78,13 @@ public class AuthController {
                             request.password(),
                             clientKey(httpRequest),
                             request.captchaChallengeId(),
-                            request.captchaAnswer())));
+                            request.captchaAnswer(),
+                            clientContext(httpRequest))));
             case "EMAIL_CODE" -> ApiResponse.ok(AuthTokenResponse.from(
-                    authService.loginWithEmailCode(request.email(), request.emailCode())));
+                    authService.loginWithEmailCode(
+                            request.email(),
+                            request.emailCode(),
+                            clientContext(httpRequest))));
             default -> throw new BusinessException(ErrorCode.PARAM_INVALID, "loginType 必须是 PASSWORD 或 EMAIL_CODE");
         };
     }
@@ -88,8 +97,11 @@ public class AuthController {
      */
     @PostMapping("/refresh")
     @Operation(summary = "刷新令牌")
-    public ApiResponse<AuthTokenResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
-        return ApiResponse.ok(AuthTokenResponse.from(authService.refresh(request.refreshToken())));
+    public ApiResponse<AuthTokenResponse> refresh(
+            @Valid @RequestBody RefreshTokenRequest request,
+            HttpServletRequest httpRequest) {
+        return ApiResponse.ok(AuthTokenResponse.from(
+                authService.refresh(request.refreshToken(), clientContext(httpRequest))));
     }
 
     /**
@@ -100,9 +112,11 @@ public class AuthController {
      */
     @PostMapping("/logout")
     @Operation(summary = "退出登录")
-    public ApiResponse<Void> logout(Authentication authentication) {
+    public ApiResponse<Void> logout(
+            Authentication authentication,
+            HttpServletRequest httpRequest) {
         AuthenticatedUser user = currentUser(authentication);
-        authService.logout(user.sessionId());
+        authService.logout(user.id(), user.sessionId(), clientContext(httpRequest));
         return ApiResponse.ok(null);
     }
 
@@ -141,5 +155,11 @@ public class AuthController {
         return RequestIdentity.clientKey(
                 request,
                 authProperties.rateLimit().trustForwardedHeader());
+    }
+
+    private ClientContext clientContext(HttpServletRequest request) {
+        return new ClientContext(
+                RequestIdentity.clientIp(request, authProperties.rateLimit().trustForwardedHeader()),
+                request.getHeader("User-Agent"));
     }
 }

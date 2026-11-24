@@ -12,6 +12,8 @@ import java.time.LocalDateTime;
  * @param status ACTIVE、DISABLED 或 DELETED
  * @param nickname 昵称
  * @param phone 联系电话
+ * @param avatarUrl 头像访问地址
+ * @param bio 个人简介
  * @param createTime 创建时间
  * @param lastLoginTime 最近登录时间
  */
@@ -23,6 +25,8 @@ public record UserAccount(
         String status,
         String nickname,
         String phone,
+        String avatarUrl,
+        String bio,
         LocalDateTime createTime,
         LocalDateTime lastLoginTime) {
 

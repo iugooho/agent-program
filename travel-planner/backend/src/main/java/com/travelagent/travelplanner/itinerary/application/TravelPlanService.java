@@ -74,6 +74,17 @@ public class TravelPlanService {
     }
 
     /**
+     * 查询用户本人创建的计划，不受部门数据范围影响。
+     *
+     * @param userId 用户主键
+     * @return 本人计划
+     */
+    @Transactional(readOnly = true)
+    public List<SavedTravelPlan> findOwned(long userId) {
+        return repository.findByOwner(userId);
+    }
+
+    /**
      * 查询可访问的单个计划。
      *
      * @param userId 当前用户主键

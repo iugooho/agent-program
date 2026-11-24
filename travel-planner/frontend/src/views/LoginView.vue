@@ -44,6 +44,7 @@ const canSendCode = computed(
 )
 
 const canSubmit = computed(() => !loginCaptchaRequired.value || loginCaptcha.value !== null)
+const accountDeleted = computed(() => route.query.deleted === '1')
 
 function switchMode(next: LoginMode): void {
   mode.value = next
@@ -162,6 +163,10 @@ onUnmounted(() => {
           邮箱验证码
         </button>
       </div>
+
+      <p v-if="accountDeleted" class="message success" role="status">
+        账号已注销，登录会话和可识别个人资料已清理。
+      </p>
 
       <form class="login-form" @submit.prevent="submit">
         <template v-if="mode === 'PASSWORD'">

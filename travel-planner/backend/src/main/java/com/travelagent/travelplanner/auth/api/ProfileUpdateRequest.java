@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Size;
  *
  * @param nickname 昵称
  * @param phone 联系电话
+ * @param bio 个人简介
  * @param newUsername 新登录账号
  * @param newPassword 新密码
  * @param newEmail 新邮箱
@@ -19,6 +20,7 @@ import jakarta.validation.constraints.Size;
 public record ProfileUpdateRequest(
         @Size(max = 50) String nickname,
         @Size(max = 20) String phone,
+        @Size(max = 500) String bio,
         @Size(min = 4, max = 32)
         @Pattern(regexp = "^$|^[A-Za-z0-9_]+$")
         String newUsername,

@@ -32,6 +32,8 @@ class JwtTokenServiceTest {
         assertEquals(7, access.userId());
         assertEquals(7, refresh.userId());
         assertEquals(access.sessionId(), refresh.sessionId());
+        assertEquals(token.sessionId(), access.sessionId());
+        assertEquals(token.userId(), access.userId());
         assertEquals("Bearer", token.tokenType());
         assertEquals(900, token.expiresIn());
     }
@@ -57,7 +59,7 @@ class JwtTokenServiceTest {
     private UserAccount user() {
         return new UserAccount(
                 7, "demo", "demo@example.com", "hash", "ACTIVE",
-                "演示用户", null, LocalDateTime.now(), null);
+                "演示用户", null, null, null, LocalDateTime.now(), null);
     }
 
     private AuthProperties properties() {

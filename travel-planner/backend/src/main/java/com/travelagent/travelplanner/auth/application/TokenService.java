@@ -15,6 +15,15 @@ public interface TokenService {
     AuthToken issue(UserAccount user);
 
     /**
+     * 在指定会话中签发新的令牌对。
+     *
+     * @param user 用户
+     * @param sessionId 会话标识
+     * @return 令牌对
+     */
+    AuthToken issue(UserAccount user, String sessionId);
+
+    /**
      * 校验 Access Token。
      *
      * @param token JWT

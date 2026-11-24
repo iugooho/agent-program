@@ -14,6 +14,8 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
@@ -92,6 +94,31 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException exception) {
         log.warn("请求体解析失败 message={}", exception.getMessage());
         return build(ErrorCode.BODY_UNREADABLE, ErrorCode.BODY_UNREADABLE.message());
+    }
+
+    /**
+     * 上传文件超过容器限制。
+     *
+     * @param exception 上传大小异常
+     * @return 统一参数错误响应
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMaxUploadSize(MaxUploadSizeExceededException exception) {
+        log.warn("上传文件过大 message={}", exception.getMessage());
+        return build(ErrorCode.PARAM_INVALID, "上传文件不能超过 3MB");
+    }
+
+    /**
+     * multipart 请求缺少必需文件。
+     *
+     * @param exception 缺少文件异常
+     * @return 统一参数错误响应
+     */
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMissingPart(
+            MissingServletRequestPartException exception) {
+        log.warn("缺少请求文件 part={}", exception.getRequestPartName());
+        return build(ErrorCode.PARAM_INVALID, "请选择需要上传的文件");
     }
 
     /**

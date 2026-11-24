@@ -297,10 +297,24 @@ mvn -f backend/pom.xml spring-boot:run
 | POST | `/api/v1/auth/captcha/challenge` | 获取 SVG 图形验证码 |
 | GET | `/api/v1/users/me` | 当前用户资料、角色和权限 |
 | PUT | `/api/v1/users/me` | 更新基础资料或安全资料 |
+| GET | `/api/v1/users/me/overview` | 本人行程统计、下一段行程和最近行程 |
+| POST | `/api/v1/users/me/avatar` | 上传并更新头像，后端统一裁切为 512×512 PNG |
+| GET | `/api/v1/users/avatars/{fileName}` | 读取头像文件，文件名不可预测且可公开缓存 |
 | GET | `/api/v1/users/me/preferences` | 获取长期旅行偏好 |
 | PUT | `/api/v1/users/me/preferences` | 更新长期旅行偏好 |
+| GET | `/api/v1/users/me/sessions` | 查询有效登录会话 |
+| DELETE | `/api/v1/users/me/sessions/{sessionId}` | 撤销指定登录会话 |
+| GET | `/api/v1/users/me/security-log` | 查询最近账号安全事件 |
+| GET | `/api/v1/users/me/notification-preferences` | 获取通知偏好 |
+| PUT | `/api/v1/users/me/notification-preferences` | 更新通知偏好 |
+| GET | `/api/v1/users/me/export` | 导出资料、偏好、通知设置和本人旅行计划 |
+| POST | `/api/v1/users/me/deletion` | 验证当前邮箱后注销并脱敏账号 |
 
 账号密码首次输入错误后必须完成人机验证。修改用户名、密码或邮箱时，必须验证当前邮箱；修改邮箱时还必须验证新邮箱。
+头像仅接受 JPEG/PNG，原图限制 2MB；本地默认保存在 `backend/uploads/avatars`，
+Docker Compose 使用独立 `avatar-data` volume。
+账号注销需要 `UPDATE_PROFILE` 用途的当前邮箱验证码。注销后全部登录会话立即失效，
+用户名和邮箱替换为不可登录的脱敏值，昵称、手机号、头像和简介被清空，旅行计划保留但不再关联可识别资料。
 
 ### RBAC 管理
 

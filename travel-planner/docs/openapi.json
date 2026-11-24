@@ -120,6 +120,52 @@
         }
       }
     },
+    "/api/v1/users/me/notification-preferences" : {
+      "get" : {
+        "tags" : [ "用户" ],
+        "summary" : "获取当前用户通知偏好",
+        "operationId" : "notificationPreferences",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseNotificationPreferencesResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put" : {
+        "tags" : [ "用户" ],
+        "summary" : "更新当前用户通知偏好",
+        "operationId" : "updateNotificationPreferences",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NotificationPreferencesRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseNotificationPreferencesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/rbac/users/{userId}/roles" : {
       "put" : {
         "tags" : [ "RBAC 权限管理" ],
@@ -476,6 +522,70 @@
         }
       }
     },
+    "/api/v1/users/me/deletion" : {
+      "post" : {
+        "tags" : [ "用户" ],
+        "summary" : "注销当前用户账号",
+        "operationId" : "deleteAccount",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AccountDeletionRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/avatar" : {
+      "post" : {
+        "tags" : [ "用户" ],
+        "summary" : "更新当前用户头像",
+        "operationId" : "updateAvatar",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "type" : "object",
+                "properties" : {
+                  "file" : {
+                    "type" : "string",
+                    "format" : "binary"
+                  }
+                },
+                "required" : [ "file" ]
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseUserResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/trips/plan" : {
       "post" : {
         "tags" : [ "旅行规划" ],
@@ -798,6 +908,110 @@
         }
       }
     },
+    "/api/v1/users/me/sessions" : {
+      "get" : {
+        "tags" : [ "用户" ],
+        "summary" : "查询当前用户登录会话",
+        "operationId" : "sessions",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListUserSessionResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/security-log" : {
+      "get" : {
+        "tags" : [ "用户" ],
+        "summary" : "查询当前用户账号安全日志",
+        "operationId" : "securityLog",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseListSecurityEventResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/overview" : {
+      "get" : {
+        "tags" : [ "用户" ],
+        "summary" : "获取当前用户个人中心概览",
+        "operationId" : "overview",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseUserOverviewResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me/export" : {
+      "get" : {
+        "tags" : [ "用户" ],
+        "summary" : "导出当前用户数据",
+        "operationId" : "export",
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseUserDataExportResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/avatars/{fileName}" : {
+      "get" : {
+        "tags" : [ "用户" ],
+        "summary" : "读取用户头像",
+        "operationId" : "avatar",
+        "parameters" : [ {
+          "name" : "fileName",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "type" : "string",
+                  "format" : "byte"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/trips" : {
       "get" : {
         "tags" : [ "旅行规划" ],
@@ -911,7 +1125,7 @@
       "get" : {
         "tags" : [ "RBAC 权限管理" ],
         "summary" : "获取 RBAC 权限分配数据",
-        "operationId" : "overview",
+        "operationId" : "overview_1",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -975,6 +1189,33 @@
         }
       }
     },
+    "/api/v1/users/me/sessions/{sessionId}" : {
+      "delete" : {
+        "tags" : [ "用户" ],
+        "summary" : "撤销当前用户指定登录会话",
+        "operationId" : "revokeSession",
+        "parameters" : [ {
+          "name" : "sessionId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/rbac/permissions/{permissionId}" : {
       "delete" : {
         "tags" : [ "RBAC 权限管理" ],
@@ -1017,6 +1258,11 @@
           "phone" : {
             "type" : "string",
             "maxLength" : 20,
+            "minLength" : 0
+          },
+          "bio" : {
+            "type" : "string",
+            "maxLength" : 500,
             "minLength" : 0
           },
           "newUsername" : {
@@ -1082,6 +1328,12 @@
           "phone" : {
             "type" : "string"
           },
+          "avatarUrl" : {
+            "type" : "string"
+          },
+          "bio" : {
+            "type" : "string"
+          },
           "role" : {
             "type" : "string"
           },
@@ -1103,9 +1355,13 @@
           "createTime" : {
             "type" : "string",
             "format" : "date-time"
+          },
+          "lastLoginTime" : {
+            "type" : "string",
+            "format" : "date-time"
           }
         },
-        "required" : [ "createTime", "email", "id", "nickname", "permissions", "phone", "role", "roles", "status", "username" ]
+        "required" : [ "avatarUrl", "bio", "createTime", "email", "id", "lastLoginTime", "nickname", "permissions", "phone", "role", "roles", "status", "username" ]
       },
       "UserPreferencesRequest" : {
         "type" : "object",
@@ -1185,6 +1441,61 @@
           }
         },
         "required" : [ "accommodationPreference", "budgetLevel", "foodHabit", "forbiddenList", "travelStyleDefault" ]
+      },
+      "NotificationPreferencesRequest" : {
+        "type" : "object",
+        "properties" : {
+          "tripReminder" : {
+            "type" : "boolean"
+          },
+          "tripChange" : {
+            "type" : "boolean"
+          },
+          "systemMessage" : {
+            "type" : "boolean"
+          },
+          "emailEnabled" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "ApiResponseNotificationPreferencesResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/NotificationPreferencesResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "NotificationPreferencesResponse" : {
+        "type" : "object",
+        "properties" : {
+          "tripReminder" : {
+            "type" : "boolean"
+          },
+          "tripChange" : {
+            "type" : "boolean"
+          },
+          "systemMessage" : {
+            "type" : "boolean"
+          },
+          "emailEnabled" : {
+            "type" : "boolean"
+          },
+          "updateTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "emailEnabled", "systemMessage", "tripChange", "tripReminder" ]
       },
       "UserRolesRequest" : {
         "type" : "object",
@@ -1443,6 +1754,17 @@
           }
         },
         "required" : [ "userIds" ]
+      },
+      "AccountDeletionRequest" : {
+        "type" : "object",
+        "properties" : {
+          "verificationCode" : {
+            "type" : "string",
+            "maxLength" : 6,
+            "minLength" : 0
+          }
+        },
+        "required" : [ "verificationCode" ]
       },
       "TripPlanRequest" : {
         "type" : "object",
@@ -2080,7 +2402,7 @@
         },
         "required" : [ "code", "name" ]
       },
-      "ApiResponseListTravelPlanSummaryResponse" : {
+      "ApiResponseListUserSessionResponse" : {
         "type" : "object",
         "properties" : {
           "code" : {
@@ -2093,8 +2415,99 @@
           "data" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/TravelPlanSummaryResponse"
+              "$ref" : "#/components/schemas/UserSessionResponse"
             }
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "UserSessionResponse" : {
+        "type" : "object",
+        "properties" : {
+          "sessionId" : {
+            "type" : "string"
+          },
+          "clientIp" : {
+            "type" : "string"
+          },
+          "userAgent" : {
+            "type" : "string"
+          },
+          "createTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "lastSeenTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "expiresAt" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "current" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "createTime", "current", "expiresAt", "lastSeenTime", "sessionId" ]
+      },
+      "ApiResponseListSecurityEventResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SecurityEventResponse"
+            }
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "SecurityEventResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "eventType" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "clientIp" : {
+            "type" : "string"
+          },
+          "userAgent" : {
+            "type" : "string"
+          },
+          "createTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "createTime", "description", "eventType", "id" ]
+      },
+      "ApiResponseUserOverviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/UserOverviewResponse"
           }
         },
         "required" : [ "code", "data", "message" ]
@@ -2144,7 +2557,38 @@
         },
         "required" : [ "createTime", "days", "destinations", "id", "mode", "ownerId", "startDate", "title", "totalBudget" ]
       },
-      "ApiResponseSavedTravelPlanResponse" : {
+      "UserOverviewResponse" : {
+        "type" : "object",
+        "properties" : {
+          "totalTrips" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "upcomingTrips" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "cities" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalDays" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "nextTrip" : {
+            "$ref" : "#/components/schemas/TravelPlanSummaryResponse"
+          },
+          "recentTrips" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TravelPlanSummaryResponse"
+            }
+          }
+        },
+        "required" : [ "cities", "recentTrips", "totalDays", "totalTrips", "upcomingTrips" ]
+      },
+      "ApiResponseUserDataExportResponse" : {
         "type" : "object",
         "properties" : {
           "code" : {
@@ -2155,7 +2599,7 @@
             "type" : "string"
           },
           "data" : {
-            "$ref" : "#/components/schemas/SavedTravelPlanResponse"
+            "$ref" : "#/components/schemas/UserDataExportResponse"
           }
         },
         "required" : [ "code", "data", "message" ]
@@ -2190,6 +2634,62 @@
           }
         },
         "required" : [ "createTime", "id", "itinerary", "mode", "ownerId", "request" ]
+      },
+      "UserDataExportResponse" : {
+        "type" : "object",
+        "properties" : {
+          "profile" : {
+            "$ref" : "#/components/schemas/UserResponse"
+          },
+          "preferences" : {
+            "$ref" : "#/components/schemas/UserPreferencesResponse"
+          },
+          "notificationPreferences" : {
+            "$ref" : "#/components/schemas/NotificationPreferencesResponse"
+          },
+          "trips" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SavedTravelPlanResponse"
+            }
+          }
+        },
+        "required" : [ "notificationPreferences", "preferences", "profile", "trips" ]
+      },
+      "ApiResponseListTravelPlanSummaryResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TravelPlanSummaryResponse"
+            }
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "ApiResponseSavedTravelPlanResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/SavedTravelPlanResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
       },
       "ApiResponseHealthResponse" : {
         "type" : "object",

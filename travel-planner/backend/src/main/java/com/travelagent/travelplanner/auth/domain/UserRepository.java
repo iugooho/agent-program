@@ -38,6 +38,7 @@ public interface UserRepository {
      * @param passwordHash 密码哈希
      * @param nickname 昵称
      * @param phone 联系电话
+     * @param bio 个人简介
      */
     void updateProfile(
             long userId,
@@ -45,7 +46,26 @@ public interface UserRepository {
             String email,
             String passwordHash,
             String nickname,
-            String phone);
+            String phone,
+            String bio);
+
+    /**
+     * 更新头像地址。
+     *
+     * @param userId 用户主键
+     * @param avatarUrl 头像访问地址
+     */
+    void updateAvatarUrl(long userId, String avatarUrl);
+
+    /**
+     * 脱敏并软删除用户。
+     *
+     * @param userId 用户主键
+     * @param anonymousUsername 脱敏账号
+     * @param anonymousEmail 脱敏邮箱
+     * @param passwordHash 随机失效密码哈希
+     */
+    void softDelete(long userId, String anonymousUsername, String anonymousEmail, String passwordHash);
 
     /**
      * 创建新用户。

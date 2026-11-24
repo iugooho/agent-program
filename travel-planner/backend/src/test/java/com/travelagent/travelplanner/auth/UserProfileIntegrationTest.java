@@ -1,12 +1,18 @@
 package com.travelagent.travelplanner.auth;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import com.travelagent.travelplanner.auth.application.EmailCodeHasher;
 import com.travelagent.travelplanner.auth.domain.EmailCodeStore;
 import com.travelagent.travelplanner.auth.domain.EmailPurpose;
@@ -24,10 +30,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.annotation.Transactional;
+import javax.imageio.ImageIO;
 
 /** 个人资料和长期偏好接口集成测试。 */
-@SpringBootTest
+@SpringBootTest(properties = "app.profile.avatar-dir=target/test-avatars")
 @AutoConfigureMockMvc
 @ActiveProfiles("local")
 @Transactional
@@ -51,11 +59,17 @@ class UserProfileIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, bearer)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"nickname":"新的昵称","phone":"13800000000"}
+                                {
+                                  "nickname":"新的昵称",
+                                  "phone":"13800000000",
+                                  "bio":"喜欢慢节奏旅行"
+                                }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.nickname").value("新的昵称"))
-                .andExpect(jsonPath("$.data.phone").value("13800000000"));
+                .andExpect(jsonPath("$.data.phone").value("13800000000"))
+                .andExpect(jsonPath("$.data.bio").value("喜欢慢节奏旅行"))
+                .andExpect(jsonPath("$.data.lastLoginTime").isNotEmpty());
 
         mockMvc.perform(put("/api/v1/users/me/preferences")
                         .header(HttpHeaders.AUTHORIZATION, bearer)
@@ -78,6 +92,59 @@ class UserProfileIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.foodHabit").value("清淡"))
                 .andExpect(jsonPath("$.data.budgetLevel").value("COMFORT"));
+    }
+
+    @Test
+    @DisplayName("个人中心概览只返回当前用户汇总数据")
+    void returnsOwnedTripOverview() throws Exception {
+        String bearer = bearerByLogin("demo", "Demo123456");
+
+        mockMvc.perform(get("/api/v1/users/me/overview")
+                        .header(HttpHeaders.AUTHORIZATION, bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalTrips").isNumber())
+                .andExpect(jsonPath("$.data.upcomingTrips").isNumber())
+                .andExpect(jsonPath("$.data.cities").isNumber())
+                .andExpect(jsonPath("$.data.totalDays").isNumber())
+                .andExpect(jsonPath("$.data.recentTrips").isArray());
+    }
+
+    @Test
+    @DisplayName("上传头像后可公开读取生成的头像文件")
+    void uploadsAndReadsAvatar() throws Exception {
+        String bearer = bearerByLogin("demo", "Demo123456");
+        MockMultipartFile avatar = new MockMultipartFile(
+                "file",
+                "avatar.png",
+                MediaType.IMAGE_PNG_VALUE,
+                pngImage());
+
+        MvcResult result = mockMvc.perform(multipart("/api/v1/users/me/avatar")
+                        .file(avatar)
+                        .header(HttpHeaders.AUTHORIZATION, bearer))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.avatarUrl").isNotEmpty())
+                .andReturn();
+        String avatarUrl = objectMapper.readTree(result.getResponse().getContentAsString())
+                .path("data")
+                .path("avatarUrl")
+                .asText();
+
+        mockMvc.perform(get(avatarUrl))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.IMAGE_PNG));
+    }
+
+    @Test
+    @DisplayName("头像上传缺少文件时返回统一参数错误")
+    void avatarUploadRequiresFile() throws Exception {
+        String bearer = bearerByLogin("demo", "Demo123456");
+
+        mockMvc.perform(multipart("/api/v1/users/me/avatar")
+                        .header(HttpHeaders.AUTHORIZATION, bearer))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(ErrorCode.PARAM_INVALID.code()))
+                .andExpect(jsonPath("$.message").value("请选择需要上传的文件"));
     }
 
     @Test
@@ -170,5 +237,19 @@ class UserProfileIntegrationTest {
                 .path("accessToken")
                 .asText();
         return "Bearer " + token;
+    }
+
+    private byte[] pngImage() throws Exception {
+        BufferedImage image = new BufferedImage(640, 480, BufferedImage.TYPE_INT_RGB);
+        Graphics2D graphics = image.createGraphics();
+        try {
+            graphics.setColor(new Color(36, 89, 198));
+            graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
+        } finally {
+            graphics.dispose();
+        }
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(image, "png", output);
+        return output.toByteArray();
     }
 }
