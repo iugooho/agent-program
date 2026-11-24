@@ -26,6 +26,9 @@
   }, {
     "name" : "旅行规划",
     "description" : "将自然语言旅行需求转换为经过规则校验的行程"
+  }, {
+    "name" : "实时对话",
+    "description" : "旅行规划多轮对话、消息历史与流式回复"
   } ],
   "paths" : {
     "/api/v1/users/me" : {
@@ -506,6 +509,156 @@
         }
       }
     },
+    "/api/v1/conversations" : {
+      "get" : {
+        "tags" : [ "实时对话" ],
+        "summary" : "查询对话会话列表",
+        "operationId" : "list",
+        "parameters" : [ {
+          "name" : "page",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 1,
+            "minimum" : 1
+          }
+        }, {
+          "name" : "size",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 20,
+            "maximum" : 50,
+            "minimum" : 1
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseConversationListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "实时对话" ],
+        "summary" : "创建对话会话",
+        "operationId" : "create",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ConversationCreateRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseConversationResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/messages" : {
+      "get" : {
+        "tags" : [ "实时对话" ],
+        "summary" : "查询对话消息历史",
+        "operationId" : "messages",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "beforeId",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "limit",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int32",
+            "default" : 50,
+            "maximum" : 200,
+            "minimum" : 1
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseChatMessagePageResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post" : {
+        "tags" : [ "实时对话" ],
+        "summary" : "发送对话消息",
+        "operationId" : "send",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseChatExchangeResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/register" : {
       "post" : {
         "tags" : [ "认证" ],
@@ -802,7 +955,7 @@
       "get" : {
         "tags" : [ "旅行规划" ],
         "summary" : "查询旅行计划列表",
-        "operationId" : "list",
+        "operationId" : "list_1",
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -902,6 +1055,108 @@
                   "$ref" : "#/components/schemas/ApiResponseString"
                 }
               }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}" : {
+      "get" : {
+        "tags" : [ "实时对话" ],
+        "summary" : "查询对话会话详情",
+        "operationId" : "detail_1",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseConversationResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete" : {
+        "tags" : [ "实时对话" ],
+        "summary" : "删除对话会话",
+        "operationId" : "delete_1",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversations/{conversationId}/messages/{messageId}/stream" : {
+      "get" : {
+        "tags" : [ "实时对话" ],
+        "summary" : "订阅助手回复流",
+        "description" : "text/event-stream，事件名：ready / delta / done / error",
+        "operationId" : "stream",
+        "parameters" : [ {
+          "name" : "conversationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "messageId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }, {
+          "name" : "Last-Event-ID",
+          "in" : "header",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "after",
+          "in" : "query",
+          "required" : false,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "SSE 事件流",
+            "content" : {
+              "text/event-stream" : { }
             }
           }
         }
@@ -1671,6 +1926,148 @@
         },
         "required" : [ "accommodationPreferences", "budget", "days", "departureCity", "destinations", "foodPreferences", "forbiddenItems", "startDate", "transportPreference", "travelStyles", "travelers" ]
       },
+      "ConversationCreateRequest" : {
+        "type" : "object",
+        "properties" : {
+          "title" : {
+            "type" : "string",
+            "maxLength" : 200,
+            "minLength" : 0
+          }
+        }
+      },
+      "ApiResponseConversationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ConversationResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "ConversationResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "messageCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "lastMessagePreview" : {
+            "type" : "string"
+          },
+          "lastMessageTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "createTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updateTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "createTime", "id", "lastMessagePreview", "messageCount", "status", "title", "updateTime" ]
+      },
+      "SendMessageRequest" : {
+        "type" : "object",
+        "properties" : {
+          "content" : {
+            "type" : "string",
+            "minLength" : 1
+          }
+        },
+        "required" : [ "content" ]
+      },
+      "ApiResponseChatExchangeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ChatExchangeResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "ChatExchangeResponse" : {
+        "type" : "object",
+        "properties" : {
+          "conversation" : {
+            "$ref" : "#/components/schemas/ConversationResponse"
+          },
+          "userMessage" : {
+            "$ref" : "#/components/schemas/ChatMessageResponse"
+          },
+          "reply" : {
+            "$ref" : "#/components/schemas/ChatMessageResponse"
+          }
+        },
+        "required" : [ "conversation", "reply", "userMessage" ]
+      },
+      "ChatMessageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "conversationId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "role" : {
+            "type" : "string"
+          },
+          "content" : {
+            "type" : "string"
+          },
+          "msgType" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "model" : {
+            "type" : "string"
+          },
+          "errorMessage" : {
+            "type" : "string"
+          },
+          "createTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          },
+          "updateTime" : {
+            "type" : "string",
+            "format" : "date-time"
+          }
+        },
+        "required" : [ "content", "conversationId", "createTime", "id", "msgType", "role", "status", "updateTime" ]
+      },
       "RegisterRequest" : {
         "type" : "object",
         "properties" : {
@@ -2237,6 +2634,81 @@
           }
         },
         "required" : [ "code", "data", "message" ]
+      },
+      "ApiResponseConversationListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ConversationListResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "ConversationListResponse" : {
+        "type" : "object",
+        "properties" : {
+          "page" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConversationResponse"
+            }
+          }
+        },
+        "required" : [ "items", "page", "size", "total" ]
+      },
+      "ApiResponseChatMessagePageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "data" : {
+            "$ref" : "#/components/schemas/ChatMessagePageResponse"
+          }
+        },
+        "required" : [ "code", "data", "message" ]
+      },
+      "ChatMessagePageResponse" : {
+        "type" : "object",
+        "properties" : {
+          "items" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ChatMessageResponse"
+            }
+          },
+          "hasMore" : {
+            "type" : "boolean"
+          },
+          "nextBeforeId" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        },
+        "required" : [ "hasMore", "items" ]
       },
       "ApiResponseRbacOverviewResponse" : {
         "type" : "object",

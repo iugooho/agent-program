@@ -50,7 +50,7 @@ class DatabaseMigrationTest {
 
             try (ResultSet row = statement.executeQuery("SELECT COUNT(*) FROM sys_permission")) {
                 assertTrue(row.next());
-                assertEquals(15, row.getInt(1), "应初始化九个基础权限和六个权限目录");
+                assertEquals(17, row.getInt(1), "应初始化九个基础权限、六个权限目录和两个对话权限");
             }
 
             try (ResultSet row = statement.executeQuery(

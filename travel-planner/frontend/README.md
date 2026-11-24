@@ -24,12 +24,16 @@ Windows 下也可以直接双击 `scripts\dev.cmd`。
 | 路径 | 页面 |
 | --- | --- |
 | `/` | 首页 |
+| `/chat` | 实时对话（SSE 流式回复） |
 | `/trips` | 智能旅行规划 |
 | `/dashboard` | 数据看板 |
 | `/profile` | 个人资料、安全设置和长期偏好 |
 | `/admin/access` | 后台权限校验 |
 | `/admin/rbac` | 超级管理员角色与权限分配 |
 | `/login`、`/register` | 登录和注册 |
+
+`/chat` 通过 `src/api/chat.ts` 调用接口，使用 `src/realtime/sse.ts` 解析
+`fetch` + `ReadableStream` 返回的 SSE；因为需要携带 `Authorization`，不使用原生 `EventSource`。
 
 ## 目录结构
 

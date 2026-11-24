@@ -27,6 +27,30 @@ export interface ApiResponseCaptchaChallengeResponse {
   data: CaptchaChallengeResponse
 }
 
+export interface ApiResponseChatExchangeResponse {
+  code: number
+  message: string
+  data: ChatExchangeResponse
+}
+
+export interface ApiResponseChatMessagePageResponse {
+  code: number
+  message: string
+  data: ChatMessagePageResponse
+}
+
+export interface ApiResponseConversationListResponse {
+  code: number
+  message: string
+  data: ConversationListResponse
+}
+
+export interface ApiResponseConversationResponse {
+  code: number
+  message: string
+  data: ConversationResponse
+}
+
 export interface ApiResponseEmailCodeResponse {
   code: number
   message: string
@@ -133,6 +157,53 @@ export interface CaptchaChallengeResponse {
   challengeId: string
   imageDataUrl: string
   expiresIn: number
+}
+
+export interface ChatExchangeResponse {
+  conversation: ConversationResponse
+  userMessage: ChatMessageResponse
+  reply: ChatMessageResponse
+}
+
+export interface ChatMessagePageResponse {
+  items: ChatMessageResponse[]
+  hasMore: boolean
+  nextBeforeId?: number
+}
+
+export interface ChatMessageResponse {
+  id: number
+  conversationId: number
+  role: string
+  content: string
+  msgType: string
+  status: string
+  model?: string
+  errorMessage?: string
+  createTime: string
+  updateTime: string
+}
+
+export interface ConversationCreateRequest {
+  title?: string
+}
+
+export interface ConversationListResponse {
+  page: number
+  size: number
+  total: number
+  items: ConversationResponse[]
+}
+
+export interface ConversationResponse {
+  id: number
+  title: string
+  status: string
+  messageCount: number
+  lastMessagePreview: string
+  lastMessageTime?: string
+  createTime: string
+  updateTime: string
 }
 
 export interface DayPlanResponse {
@@ -379,6 +450,10 @@ export interface SavedTravelPlanResponse {
   itinerary: ItineraryResponse
   mode: string
   createTime: string
+}
+
+export interface SendMessageRequest {
+  content: string
 }
 
 export interface TravelPlanSummaryResponse {

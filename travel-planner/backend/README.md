@@ -46,6 +46,7 @@ mvn -Pquality verify    # 代码规范检查（Checkstyle）
     │   ├── auth/               # 注册、登录、JWT、验证码、用户资料和偏好
     │   ├── rbac/               # 角色、权限、用户角色和权限分配
     │   ├── demo/               # 示例模块，可删除
+    │   ├── chat/               # 实时对话：会话、消息、SSE 与模型端口
     │   └── itinerary/          # 行程模块（按业务能力分层）
     ├── main/resources/         # application.yml、日志配置、数据库迁移脚本
     └── test/java/com/travelagent/travelplanner/

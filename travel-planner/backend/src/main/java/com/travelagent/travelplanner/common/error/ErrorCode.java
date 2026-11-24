@@ -77,6 +77,18 @@ public enum ErrorCode {
     /** 内置权限不允许删除。 */
     PERMISSION_PROTECTED(3004, "内置权限不允许删除", 400),
 
+    /** 对话不存在，或不属于当前用户。 */
+    CONVERSATION_NOT_FOUND(4000, "会话不存在", 404),
+
+    /** 消息不存在，或不属于当前会话。 */
+    CHAT_MESSAGE_NOT_FOUND(4001, "消息不存在", 404),
+
+    /** 助手回复生成失败。 */
+    CHAT_GENERATION_FAILED(4002, "回复生成失败，请稍后重试", 502),
+
+    /** 会话或消息当前状态不允许该操作。 */
+    CHAT_STATE_INVALID(4003, "当前对话状态不支持该操作", 409),
+
     /** 服务器内部错误：未预期的异常，细节只进日志。 */
     INTERNAL_ERROR(500, "内部服务器错误", 500);
 

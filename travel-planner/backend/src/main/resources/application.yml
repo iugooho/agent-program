@@ -74,6 +74,37 @@ app:
       connect-timeout: ${APP_EMAIL_CONNECT_TIMEOUT:10s}
       read-timeout: ${APP_EMAIL_READ_TIMEOUT:30s}
       write-timeout: ${APP_EMAIL_WRITE_TIMEOUT:30s}
+  chat:
+    # 按顺序选择第一个可用模型；没有密钥时自动落到 rule，业务代码不感知。
+    providers: ${APP_CHAT_PROVIDERS:spring-ai,rule}
+    default-title: ${APP_CHAT_DEFAULT_TITLE:新的旅行对话}
+    # {{today}} 会在启动/请求时替换为当天日期；改提示词不需要改 Java。
+    system-prompt: |-
+      你是旅游规划智能体，负责把用户的口语化旅行需求整理成可执行方案。
+      今天是 {{today}}。
+      回答要求：
+      1. 用简体中文，先确认已知条件，再给建议；
+      2. 缺少目的地、天数、人数、预算等关键条件时，一次追问不超过两个问题；
+      3. 不编造实时价格、航班、酒店库存和开放时间，涉及事实时说明“以实时查询为准”；
+      4. 行程建议按天拆开，控制每天强度，给交通和休息留余量；
+      5. 用户提出修改时，先复述要改什么，再给受影响的部分，不要重写整份行程。
+    context-messages: ${APP_CHAT_CONTEXT_MESSAGES:20}
+    context-char-budget: ${APP_CHAT_CONTEXT_CHAR_BUDGET:12000}
+    title-max-length: ${APP_CHAT_TITLE_MAX_LENGTH:30}
+    preview-max-length: ${APP_CHAT_PREVIEW_MAX_LENGTH:60}
+    max-content-chars: ${APP_CHAT_MAX_CONTENT_CHARS:4000}
+    stream-timeout: ${APP_CHAT_STREAM_TIMEOUT:5m}
+    heartbeat-interval: ${APP_CHAT_HEARTBEAT_INTERVAL:15s}
+    replay-retention: ${APP_CHAT_REPLAY_RETENTION:2m}
+    flush-interval-ms: ${APP_CHAT_FLUSH_INTERVAL_MS:800}
+    max-buffered-chunks: ${APP_CHAT_MAX_BUFFERED_CHUNKS:20000}
+    fallback-enabled: ${APP_CHAT_FALLBACK_ENABLED:true}
+    # 仅本地规则降级模式：每段之间的展示间隔，让没有模型密钥时也能看到增量推送；设 0 关闭。
+    rule-chunk-delay: ${APP_CHAT_RULE_CHUNK_DELAY:25ms}
+    executor:
+      core-size: ${APP_CHAT_EXECUTOR_CORE:4}
+      max-size: ${APP_CHAT_EXECUTOR_MAX:16}
+      queue-capacity: ${APP_CHAT_EXECUTOR_QUEUE:200}
   travel:
     amap:
       base-url: ${AMAP_BASE_URL:https://restapi.amap.com}

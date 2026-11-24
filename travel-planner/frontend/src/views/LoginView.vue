@@ -35,12 +35,7 @@ const form = reactive({
 })
 
 const canSendCode = computed(
-  () =>
-    mode.value === 'EMAIL_CODE' &&
-    form.email.length > 0 &&
-    emailCaptcha.value !== null &&
-    countdown.value === 0 &&
-    !sendingCode.value
+  () => mode.value === 'EMAIL_CODE' && countdown.value === 0 && !sendingCode.value
 )
 
 const canSubmit = computed(() => !loginCaptchaRequired.value || loginCaptcha.value !== null)
@@ -93,9 +88,13 @@ async function submit(): Promise<void> {
 async function sendCode(): Promise<void> {
   errorMessage.value = ''
   successMessage.value = ''
+  if (!form.email.trim()) {
+    errorMessage.value = '请先填写邮箱'
+    return
+  }
   const captcha = emailCaptcha.value
   if (!captcha) {
-    errorMessage.value = '请先完成人机验证'
+    errorMessage.value = '请先输入图形验证码'
     return
   }
   sendingCode.value = true
@@ -106,8 +105,14 @@ async function sendCode(): Promise<void> {
     emailCaptcha.value = null
     emailCaptchaKey.value += 1
   } catch (error: unknown) {
-    errorMessage.value = error instanceof Error ? error.message : '验证码发送失败'
-    if (error instanceof AuthApiError && error.code === 1011) {
+    if (error instanceof AuthApiError && (error.code === 1007 || error.code === 1012)) {
+      startCountdown(60)
+      errorMessage.value =
+        error.code === 1007 ? '发送过于频繁，请 60 秒后重试' : '请求过于频繁，请 60 秒后重试'
+    } else {
+      errorMessage.value = error instanceof Error ? error.message : '验证码发送失败'
+    }
+    if (error instanceof AuthApiError && (error.code === 1007 || error.code === 1011)) {
       emailCaptcha.value = null
       emailCaptchaKey.value += 1
     }
@@ -204,6 +209,7 @@ onUnmounted(() => {
               :reset-key="emailCaptchaKey"
               @changed="emailCaptcha = $event"
             />
+            <p class="send-hint">先填邮箱、输入图中字符，再点“发送验证码”。</p>
           </div>
           <label>
             验证码
@@ -324,6 +330,12 @@ onUnmounted(() => {
   color: #334155;
   font-size: 14px;
   font-weight: 600;
+}
+
+.send-hint {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
 }
 
 label {

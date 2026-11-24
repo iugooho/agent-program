@@ -13,6 +13,8 @@ import com.travelagent.travelplanner.common.error.ErrorCode;
 import java.security.SecureRandom;
 import java.util.Locale;
 import java.time.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -23,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -241,6 +244,7 @@ public class AuthService {
         if (purpose == EmailPurpose.LOGIN
                 && userRepository.findByEmail(normalizedEmail).isEmpty()) {
             // 统一返回发送结果但不投递，避免账号枚举并防止向任意邮箱发送验证码。
+            log.info("邮箱验证码按防枚举策略跳过投递，purpose={}", purpose);
             return new EmailCodeDelivery(options.ttl().toSeconds(), options.retryAfter().toSeconds());
         }
         String code = String.format(Locale.ROOT, "%06d", RANDOM.nextInt(1_000_000));
@@ -250,6 +254,7 @@ public class AuthService {
                 EmailCodeHasher.hash(normalizedEmail, purpose, code),
                 options.ttl());
         emailCodeSender.send(normalizedEmail, purpose, code);
+        log.info("邮箱验证码已提交后台投递，purpose={}", purpose);
         return new EmailCodeDelivery(options.ttl().toSeconds(), options.retryAfter().toSeconds());
     }
 
